@@ -1,13 +1,16 @@
 const mysql = require("mysql2");
+const config = require("./env");
 
-const pool = mysql.createPool({
-    host:process.env.DB_HOST || "localhost",
-    user:process.env.DB_USER || "root",
-    password:process.env.DB_PASSWORD || " ",
-    database:process.env.DB_DATABASE || "prishtinatrafik",
-    port:process.env.DB_PORT || 3306,
+const pool = mysql
+  .createPool({
+    host: config.DB_HOST,
+    user: config.DB_USER,
+    password: config.DB_PASSWORD,
+    database: config.DB_DATABASE,
+    port: config.DB_PORT,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
-});
+  })
+  .promise();
+
 module.exports = pool;
