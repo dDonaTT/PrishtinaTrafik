@@ -27,7 +27,7 @@ const login = async ({email,password}) => {
         {
             id:user.id, email:user.email, role:user.role, fullname:user.fullname
         },
-        JWT_SECRET,
+        process.env.JWT_SECRET,
         {expiresIn: "7d"}
     )
     return {token, user:{id:user.id, fullname:user.fullname, email:user.email, role:user.role}};
