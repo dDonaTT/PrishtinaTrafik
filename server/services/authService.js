@@ -10,7 +10,7 @@ const register = async ({fullname, email,password}) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({fullname, email, password: hashedPassword});
-    await Wallet.create(email);
+    await Wallet.create(user.id);
     return user;
     
 }
