@@ -1,1 +1,6 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+body {
+  @apply bg-gray-50 dark:bg-gray-950;
+}

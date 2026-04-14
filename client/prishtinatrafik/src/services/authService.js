@@ -1,4 +1,4 @@
-import API from "../../services/api";
+import API from "./api";
 
 const AUTH_ENDPOINTS = {
   REGISTER: "/auth/register",

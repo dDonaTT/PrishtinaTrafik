@@ -56,6 +56,7 @@ const Login = () => {
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+      <Toaster position="top-right" />
 
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         {/* Logo */}

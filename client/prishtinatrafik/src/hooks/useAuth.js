@@ -7,7 +7,7 @@ import {
   getCurrentUser,
   getToken,
   isAuthenticated as checkAuth 
-} from '../features/auth/authService';
+} from '../services/authService';
 import toast from 'react-hot-toast';
 
 export const useAuth = () => {

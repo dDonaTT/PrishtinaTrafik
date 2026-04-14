@@ -144,24 +144,25 @@ const Ride = {
   },
 
   findNearbyVehicles: async (latitude, longitude, vehicle_type, radius_km = 1) => {
-    const [rows] = await db.query(
-      `SELECT *, 
-        (6371 * acos(
-          cos(radians(?)) * cos(radians(latitude)) * 
-          cos(radians(longitude) - radians(?)) + 
-          sin(radians(?)) * sin(radians(latitude))
-        )) AS distance
-        FROM vehicle_locations
-        WHERE vehicle_type = ? 
-        AND is_available = TRUE
-        HAVING distance < ?
-        ORDER BY distance ASC
-        LIMIT 10`,
-      [latitude, longitude, latitude, vehicle_type, radius_km]
-    );
-    return rows;
-  },
+  
+  const typeFilter = (vehicle_type === 'all' || !vehicle_type) ? null : vehicle_type;
 
+  const [rows] = await db.query(
+    `SELECT *, 
+      (6371 * acos(
+        cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + 
+        sin(radians(?)) * sin(radians(latitude))
+      )) AS distance
+      FROM vehicle_locations
+      WHERE (? IS NULL OR vehicle_type = ?) -- Kjo lejon 'All'
+      AND is_available = TRUE
+      HAVING distance < ?
+      ORDER BY distance ASC
+      LIMIT 50`, // Rrite limitin kur janë 'All'
+    [latitude, longitude, latitude, typeFilter, typeFilter, radius_km]
+  );
+  return rows;
+},
   getRideStats: async (user_id) => {
     const [rows] = await db.query(
       `SELECT 
