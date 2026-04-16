@@ -1,50 +1,53 @@
-import React from "react";
-import { Bus, Car, Bike, Scooter } from "lucide-react";
+// client/src/components/map/VehicleFilters.jsx
+import React from 'react';
+import { Bus, Car, Bike, Scooter, LayoutGrid } from 'lucide-react';
 
 const filters = [
-  { type: "bus", icon: Bus, label: "Bus", color: "blue" },
-  { type: "taxi", icon: Car, label: "Taxi", color: "yellow" },
-  { type: "bike", icon: Bike, label: "Bike", color: "green" },
-  { type: "scooter", icon: Scooter, label: "Scooter", color: "purple" },
+  { type: 'all', icon: LayoutGrid, label: 'All', color: 'gray' },
+  { type: 'bus', icon: Bus, label: 'Bus', color: 'blue' },
+  { type: 'taxi', icon: Car, label: 'Taxi', color: 'yellow' },
+  { type: 'bike', icon: Bike, label: 'Bike', color: 'green' },
+  { type: 'scooter', icon: Scooter, label: 'Scooter', color: 'purple' }
 ];
-
-// Tailwind nuk i suporton emrat dinamik si bg-${color}-600 pa i deklaruar,
-// andaj i mapojmë klasat këtu për siguri.
-const colorClasses = {
-  blue: "bg-blue-600",
-  yellow: "bg-yellow-500",
-  green: "bg-green-600",
-  purple: "bg-purple-600",
-};
 
 const VehicleFilters = ({ selectedType, onSelectType }) => {
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 flex gap-2 overflow-x-auto max-w-[90vw]">
-      <button
-        onClick={() => onSelectType(null)}
-        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-          !selectedType
-            ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200"
-        }`}
-      >
-        All
-      </button>
+    <div className="absolute top-4 left-3 right-3 z-20 md:top-1.5 md:left-1/2 md:right-auto md:-translate-x-1/2">
+      <div className="block md:hidden">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 px-1 scrollbar-hide">
+          {filters.map(({ type, icon: Icon, label }) => (
+            <button
+              key={type}
+              onClick={() => onSelectType(type === 'all' ? null : type)}
+              className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                (type === 'all' && !selectedType) || selectedType === type
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {filters.map(({ type, icon: Icon, label, color }) => (
-        <button
-          key={type}
-          onClick={() => onSelectType(type)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap ${
-            selectedType === type
-              ? `${colorClasses[color]} text-white`
-              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-          }`}
-        >
-          <Icon className="w-4 h-4" />
-          {label}
-        </button>
-      ))}
+      <div className="hidden md:flex md:gap-2 md:bg-white/90 md:dark:bg-gray-800/90 md:backdrop-blur-sm md:rounded-full md:shadow-lg md:px-3 md:py-2">
+        {filters.map(({ type, icon: Icon, label }) => (
+          <button
+            key={type}
+            onClick={() => onSelectType(type === 'all' ? null : type)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+              (type === 'all' && !selectedType) || selectedType === type
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

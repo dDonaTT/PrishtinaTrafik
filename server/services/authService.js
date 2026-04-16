@@ -28,7 +28,7 @@ const login = async ({email,password}) => {
             id:user.id, email:user.email, role:user.role, fullname:user.fullname
         },
         process.env.JWT_SECRET,
-        {expiresIn: "7d"}
+        {expiresIn: "24h"}
     )
     return {token, user:{id:user.id, fullname:user.fullname, email:user.email, role:user.role}};
 

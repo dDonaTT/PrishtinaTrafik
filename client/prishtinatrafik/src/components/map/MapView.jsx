@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-// Konfigurimet e ikonave dhe ngjyrave
 const getVehicleIcon = (type) => {
   const icons = { bus: "🚌", taxi: "🚕", bike: "🚲", scooter: "🛴" };
   return icons[type] || "📍";
@@ -30,7 +29,6 @@ const MapView = ({
   const markers = useRef([]);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  // 1. Inicializimi i Hartës (Ekzekutohet vetëm 1 herë)
   useEffect(() => {
     const token = import.meta.env.VITE_MAPBOX_TOKEN;
     if (!token || !mapContainer.current) return;
@@ -70,7 +68,6 @@ const MapView = ({
     let vehiclesToShow = [];
 
     if (selectedType && selectedType !== "all") {
-      // Shtuam kontrollin 'all'
       const typeMap = {
         bus: vehicles.buses || [],
         taxi: vehicles.taxis || [],
@@ -87,7 +84,6 @@ const MapView = ({
       ];
     }
 
-    // Vizatimi i markerave të filtruara
     vehiclesToShow.forEach((vehicle) => {
       const lng = parseFloat(vehicle.longitude);
       const lat = parseFloat(vehicle.latitude);
@@ -96,33 +92,79 @@ const MapView = ({
 
       const el = document.createElement("div");
       el.className = "custom-marker cursor-pointer";
+      
+      // Ndrysho madhësinë e markerave në varësi të tipit
+      const isBusOrTaxi = vehicle.vehicle_type === 'bus' || vehicle.vehicle_type === 'taxi';
+      const markerSize = isBusOrTaxi ? '52px' : '42px';
+      const iconSize = isBusOrTaxi ? '28px' : '22px';
+      
       el.innerHTML = `
         <div style="
           background: white; 
-          width: 42px; height: 42px; 
+          width: ${markerSize}; height: ${markerSize}; 
           border-radius: 50%; 
           display: flex; align-items: center; justify-content: center; 
-          font-size: 22px; 
+          font-size: ${iconSize}; 
           box-shadow: 0 3px 12px rgba(0,0,0,0.2);
           border: 3px solid ${getVehicleColor(vehicle.vehicle_type)};
           transition: transform 0.2s ease;
+          cursor: pointer;
         " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
           ${getVehicleIcon(vehicle.vehicle_type)}
         </div>
       `;
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-        <div style="padding: 8px; text-align: center; font-family: sans-serif;">
-          <h4 style="margin: 0; color: #1f2937; text-transform: capitalize;">${vehicle.vehicle_type}</h4>
-          <p style="margin: 4px 0; font-size: 12px; color: #6b7280;">ID: ${vehicle.vehicle_id}</p>
-          ${vehicle.battery_level ? `<p style="margin: 4px 0; font-size: 12px;">🔋 ${vehicle.battery_level}%</p>` : ""}
-          <button id="book-${vehicle.id || vehicle.vehicle_id}" style="
+      const isTicketVehicle = vehicle.vehicle_type === 'bus' || vehicle.vehicle_type === 'taxi';
+      
+      let popupHTML = `
+        <div style="padding: 12px; text-align: center; font-family: sans-serif; min-width: 180px;">
+          <h4 style="margin: 0; color: #1f2937; text-transform: capitalize; font-size: 16px; font-weight: bold;">
+            ${vehicle.vehicle_type === 'bus' ? '🚌 Autobus' : '🚕 Taksi'}
+          </h4>
+          <p style="margin: 5px 0; font-size: 12px; color: #6b7280;">ID: ${vehicle.vehicle_id}</p>
+      `;
+      
+      if (vehicle.route_name) {
+        popupHTML += `<p style="margin: 5px 0; font-size: 12px; color: #6b7280;">📍 ${vehicle.route_name}</p>`;
+      }
+      
+      if (vehicle.battery_level) {
+        popupHTML += `<p style="margin: 5px 0; font-size: 12px;">🔋 ${vehicle.battery_level}%</p>`;
+      }
+      
+      if (isTicketVehicle) {
+        const price = vehicle.vehicle_type === 'bus' ? '€0.40' : '€2.50';
+        popupHTML += `
+          <div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Çmimi: ${price}</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">Biletë e vetme</p>
+          </div>
+        `;
+      }
+      
+      if (isTicketVehicle) {
+        popupHTML += `
+          <button id="buy-ticket-${vehicle.id || vehicle.vehicle_id}" style="
             background: #2563eb; color: white; border: none; 
-            padding: 6px 12px; border-radius: 6px; cursor: pointer;
-            width: 100%; font-weight: 500; margin-top: 5px;
-          ">Zgjidh Mjetin</button>
-        </div>
-      `);
+            padding: 10px 16px; border-radius: 8px; cursor: pointer;
+            width: 100%; font-weight: 600; margin-top: 8px;
+            font-size: 14px;
+          ">🎫 Bli biletë</button>
+        `;
+      } else {
+        popupHTML += `
+          <button id="start-ride-${vehicle.id || vehicle.vehicle_id}" style="
+            background: #10b981; color: white; border: none; 
+            padding: 10px 16px; border-radius: 8px; cursor: pointer;
+            width: 100%; font-weight: 600; margin-top: 8px;
+            font-size: 14px;
+          ">🚲 Fillo udhëtimin</button>
+        `;
+      }
+      
+      popupHTML += `</div>`;
+
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupHTML);
 
       const marker = new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
@@ -130,11 +172,24 @@ const MapView = ({
         .addTo(map.current);
 
       popup.on("open", () => {
-        const btn = document.getElementById(
-          `book-${vehicle.id || vehicle.vehicle_id}`,
-        );
-        if (btn) {
-          btn.onclick = () => onVehicleClick(vehicle);
+        if (isTicketVehicle) {
+          const btn = document.getElementById(`buy-ticket-${vehicle.id || vehicle.vehicle_id}`);
+          if (btn) {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              popup.remove();
+              onVehicleClick(vehicle, 'buy');
+            };
+          }
+        } else {
+          const btn = document.getElementById(`start-ride-${vehicle.id || vehicle.vehicle_id}`);
+          if (btn) {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              popup.remove();
+              onVehicleClick(vehicle, 'ride');
+            };
+          }
         }
       });
 
@@ -142,7 +197,6 @@ const MapView = ({
     });
   }, [vehicles, isMapLoaded, selectedType, onVehicleClick]);
 
-  // 3. Levizja e hartës (FlyTo)
   useEffect(() => {
     if (map.current && center) {
       map.current.flyTo({

@@ -7,6 +7,8 @@ import AppLayout from "./components/layout/AppLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
+import TicketsPage from "./pages/TicketsPage";
+import RidesPage from "./pages/RidesPage";
 
 
 const ProtectedRoute = () => {
@@ -36,6 +38,9 @@ function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/tickets" element={<TicketsPage />} />
+          <Route path="/rides" element={<RidesPage />} />
+
         </Route>
       </Route>
 
