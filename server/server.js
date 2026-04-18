@@ -17,7 +17,9 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
-app.use("/api/payments", webhookRoutes)
+
+app.use("/api/webhook", webhookRoutes);
+
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
@@ -28,7 +30,9 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/rides", rideRoutes);
 app.use("/api/bookings", bookingRoutes);
+
 const port = process.env.PORT || 5000;
+
 db.getConnection()
   .then(() => console.log("Database connected"))
   .catch((err) => console.log(err));

@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import TicketsPage from "./pages/TicketsPage";
 import RidesPage from "./pages/RidesPage";
+import WalletPage from "./pages/WalletPage";
 
 
 const ProtectedRoute = () => {
@@ -40,6 +41,7 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/tickets" element={<TicketsPage />} />
           <Route path="/rides" element={<RidesPage />} />
+          <Route path="/wallet" element={<WalletPage />} />
 
         </Route>
       </Route>
