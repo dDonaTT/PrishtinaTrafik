@@ -16,7 +16,6 @@ const TICKET_PRICES = {
 };
 
 export default function Home() {
-  const { user } = useAuth();
   const {
     location,
     loading: locationLoading,
@@ -272,16 +271,7 @@ export default function Home() {
         </div>
       </div>
 
-      {user && (
-        <div className="absolute top-4 left-3 z-20 pointer-events-none animate-fade-out md:top-20 md:left-4">
-          <div className="bg-green-500/90 backdrop-blur px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-lg">
-            <p className="text-xs md:text-sm font-medium text-white">
-              👋 Përshëndetje,{" "}
-              {user.fullname?.split(" ")[0] || user.name || "User"}!
-            </p>
-          </div>
-        </div>
-      )}
+      
 
       <BuyTicketModel
         isOpen={showBuyModal}

@@ -20,4 +20,11 @@ const jwt = require("jsonwebtoken");
     }
     next();
 }
-module.exports = {authMiddleware,adminMiddleware};
+const inspectorMiddleware = (req, res, next) => {
+  if (req.user.role !== "inspector" && req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Inspector only." });
+  }
+  next();
+};
+
+module.exports = {authMiddleware,adminMiddleware,inspectorMiddleware};

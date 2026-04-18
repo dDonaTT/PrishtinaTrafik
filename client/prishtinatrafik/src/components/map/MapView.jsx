@@ -93,7 +93,6 @@ const MapView = ({
       const el = document.createElement("div");
       el.className = "custom-marker cursor-pointer";
       
-      // Ndrysho madhësinë e markerave në varësi të tipit
       const isBusOrTaxi = vehicle.vehicle_type === 'bus' || vehicle.vehicle_type === 'taxi';
       const markerSize = isBusOrTaxi ? '52px' : '42px';
       const iconSize = isBusOrTaxi ? '28px' : '22px';
