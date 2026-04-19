@@ -11,7 +11,6 @@ export default function BuyTicketModal({ isOpen, onClose, onBuy, prices, presele
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  // Reset kur mbyllet modal
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
@@ -20,7 +19,6 @@ export default function BuyTicketModal({ isOpen, onClose, onBuy, prices, presele
     }
   }, [isOpen]);
 
-  // Nëse ka vehicle të parazgjedhur, kalo direkt te konfirmimi
   useEffect(() => {
     if (isOpen && preselectedVehicle) {
       const vehicle = preselectedVehicle;
@@ -49,7 +47,6 @@ export default function BuyTicketModal({ isOpen, onClose, onBuy, prices, presele
     }
   };
 
-  // Hape modal-in dhe merr vehicle-t vetëm nëse nuk ka preselectedVehicle
   useEffect(() => {
     if (isOpen && !preselectedVehicle) {
       fetchVehicles();
@@ -89,7 +86,6 @@ export default function BuyTicketModal({ isOpen, onClose, onBuy, prices, presele
     return `ID: ${vehicle.vehicle_id}`;
   };
 
-  // Nëse ka vehicle të parazgjedhur, shfaq vetëm konfirmimin
   if (preselectedVehicle && step === 3) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

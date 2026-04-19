@@ -4,27 +4,32 @@ const Wallet = require("./Wallet");
 const { v4: uuidv4 } = require("uuid");
 
 const RIDE_PRICES = {
-  bike: 0.05,     // €0.05 per minute
-  scooter: 0.03   // €0.03 per minute
+  bike: 0.05,
+  scooter: 0.03,
 };
 
 const Ride = {
-  
   startRide: async ({ user_id, vehicle_id, vehicle_type, start_location }) => {
     const activeRide = await Ride.getActiveRide(user_id);
     if (activeRide) {
       throw { status: 400, message: "You already have an active ride" };
     }
-    
-    if (!['bike', 'scooter'].includes(vehicle_type)) {
-      throw { status: 400, message: "Invalid vehicle type. Use 'bike' or 'scooter'" };
+
+    if (!["bike", "scooter"].includes(vehicle_type)) {
+      throw {
+        status: 400,
+        message: "Invalid vehicle type. Use 'bike' or 'scooter'",
+      };
     }
-    
-    const vehicle = await Ride.checkVehicleAvailability(vehicle_id, vehicle_type);
+
+    const vehicle = await Ride.checkVehicleAvailability(
+      vehicle_id,
+      vehicle_type,
+    );
     if (!vehicle) {
       throw { status: 400, message: "Vehicle is not available" };
     }
-    
+
     const ride_id = uuidv4();
 
     const [result] = await db.query(
@@ -33,14 +38,14 @@ const Ride = {
         VALUES (?, ?, ?, ?, NOW(), ?, 'active')`,
       [ride_id, user_id, vehicle_id, vehicle_type, start_location],
     );
-    
+
     await db.query(
       `UPDATE vehicle_locations 
         SET is_available = FALSE 
         WHERE vehicle_id = ? AND vehicle_type = ?`,
       [vehicle_id, vehicle_type],
     );
-    
+
     return {
       id: result.insertId,
       ride_id,
@@ -73,7 +78,7 @@ const Ride = {
 
     const pricePerMinute = RIDE_PRICES[currentRide.vehicle_type];
     const totalCost = parseFloat((durationMinutes * pricePerMinute).toFixed(2));
-    
+
     await db.query(
       `UPDATE rides 
         SET end_time = NOW(),
@@ -116,7 +121,7 @@ const Ride = {
     const [rows] = await db.query(
       `SELECT * FROM rides 
         WHERE user_id = ? AND status = 'active'`,
-      [user_id]
+      [user_id],
     );
     return rows[0];
   },
@@ -127,7 +132,7 @@ const Ride = {
         WHERE user_id = ? 
         ORDER BY created_at DESC 
         LIMIT ?`,
-      [user_id, limit]
+      [user_id, limit],
     );
     return rows;
   },
@@ -138,31 +143,30 @@ const Ride = {
         WHERE vehicle_id = ? 
         AND vehicle_type = ? 
         AND is_available = TRUE`,
-      [vehicle_id, vehicle_type]
+      [vehicle_id, vehicle_type],
     );
     return rows[0];
   },
 
-  findNearbyVehicles: async (latitude, longitude, vehicle_type, radius_km = 1) => {
-  
-  const typeFilter = (vehicle_type === 'all' || !vehicle_type) ? null : vehicle_type;
+  getAllVehicles: async (vehicle_type = null) => {
+    let query = `
+        SELECT *, 0 as distance
+        FROM vehicle_locations
+        WHERE is_available = 1
+    `;
 
-  const [rows] = await db.query(
-    `SELECT *, 
-      (6371 * acos(
-        cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + 
-        sin(radians(?)) * sin(radians(latitude))
-      )) AS distance
-      FROM vehicle_locations
-      WHERE (? IS NULL OR vehicle_type = ?) -- Kjo lejon 'All'
-      AND is_available = TRUE
-      HAVING distance < ?
-      ORDER BY distance ASC
-      LIMIT 50`, // Rrite limitin kur janë 'All'
-    [latitude, longitude, latitude, typeFilter, typeFilter, radius_km]
-  );
-  return rows;
-},
+    const params = [];
+
+    if (vehicle_type && vehicle_type !== "all") {
+      query += ` AND vehicle_type = ?`;
+      params.push(vehicle_type);
+    }
+
+    query += ` ORDER BY vehicle_type, vehicle_id`;
+
+    const [rows] = await db.query(query, params);
+    return rows;
+  },
   getRideStats: async (user_id) => {
     const [rows] = await db.query(
       `SELECT 
@@ -174,18 +178,18 @@ const Ride = {
         MIN(duration_minutes) as shortest_ride
       FROM rides 
       WHERE user_id = ? AND status = 'completed'`,
-      [user_id]
+      [user_id],
     );
-    
+
     const stats = rows[0];
-    
+
     return {
       total_rides: stats.total_rides || 0,
       total_minutes: stats.total_minutes || 0,
       total_spent: parseFloat(stats.total_spent || 0).toFixed(2),
       avg_duration: Math.round(stats.avg_duration || 0),
       longest_ride: stats.longest_ride || 0,
-      shortest_ride: stats.shortest_ride || 0
+      shortest_ride: stats.shortest_ride || 0,
     };
   },
 
@@ -194,30 +198,30 @@ const Ride = {
     const [ride] = await db.query(
       `SELECT * FROM rides 
         WHERE ride_id = ? AND user_id = ? AND status = 'active'`,
-      [ride_id, user_id]
+      [ride_id, user_id],
     );
-    
+
     if (!ride || ride.length === 0) {
       throw { status: 404, message: "No active ride found to cancel" };
     }
-    
+
     const currentRide = ride[0];
-    
+
     const [result] = await db.query(
       `UPDATE rides 
         SET status = 'cancelled', 
             end_time = NOW()
         WHERE ride_id = ? AND user_id = ? AND status = 'active'`,
-      [ride_id, user_id]
+      [ride_id, user_id],
     );
-    
+
     await db.query(
       `UPDATE vehicle_locations 
         SET is_available = TRUE 
         WHERE vehicle_id = ? AND vehicle_type = ?`,
-      [currentRide.vehicle_id, currentRide.vehicle_type]
+      [currentRide.vehicle_id, currentRide.vehicle_type],
     );
-    
+
     return result.affectedRows > 0;
   },
 
@@ -225,7 +229,7 @@ const Ride = {
     const [rows] = await db.query(
       `SELECT * FROM rides 
         WHERE ride_id = ? AND user_id = ?`,
-      [ride_id, user_id]
+      [ride_id, user_id],
     );
     return rows[0];
   },
@@ -234,7 +238,7 @@ const Ride = {
     const [rows] = await db.query(
       `SELECT COUNT(*) as count FROM rides 
         WHERE user_id = ? AND status = 'active'`,
-      [user_id]
+      [user_id],
     );
     return rows[0].count > 0;
   },
@@ -244,7 +248,7 @@ const Ride = {
       `SELECT SUM(total_cost) as total 
         FROM rides 
         WHERE user_id = ? AND vehicle_type = ? AND status = 'completed'`,
-      [user_id, vehicle_type]
+      [user_id, vehicle_type],
     );
     return parseFloat(rows[0].total || 0).toFixed(2);
   },
@@ -255,10 +259,84 @@ const Ride = {
         WHERE user_id = ? AND status = 'completed' 
         ORDER BY created_at DESC 
         LIMIT 1`,
-      [user_id]
+      [user_id],
     );
     return rows[0];
-  }
+  },
+  startTaxiRide: async ({
+    ride_id,
+    user_id,
+    start_lat,
+    start_lng,
+    start_location,
+    nightMultiplier,
+    weekendMultiplier,
+  }) => {
+    const [result] = await db.query(
+      `INSERT INTO rides 
+         (ride_id, user_id, vehicle_type, start_location, start_lat, start_lng, 
+          status, night_multiplier, weekend_multiplier, start_time) 
+         VALUES (?, ?, 'taxi', ?, ?, ?, 'active', ?, ?, NOW())`,
+      [
+        ride_id,
+        user_id,
+        start_location,
+        start_lat,
+        start_lng,
+        nightMultiplier,
+        weekendMultiplier,
+      ],
+    );
+    return { id: result.insertId, ride_id };
+  },
+
+  getActiveRideById: async (ride_id) => {
+    const [rows] = await db.query(
+      `SELECT * FROM rides WHERE ride_id = ? AND status = 'active'`,
+      [ride_id],
+    );
+    return rows[0];
+  },
+
+  updateTaxiLocation: async (ride_id, current_lat, current_lng) => {
+    await db.query(
+      `UPDATE rides SET current_lat = ?, current_lng = ? WHERE ride_id = ?`,
+      [current_lat, current_lng, ride_id],
+    );
+  },
+
+  endTaxiRide: async (
+    ride_id,
+    end_lat,
+    end_lng,
+    end_location,
+    distance_km,
+    waiting_minutes,
+    total_cost,
+  ) => {
+    const [result] = await db.query(
+      `UPDATE rides 
+         SET end_time = NOW(),
+             end_location = ?,
+             end_lat = ?,
+             end_lng = ?,
+             distance_km = ?,
+             waiting_minutes = ?,
+             total_cost = ?,
+             status = 'completed'
+         WHERE ride_id = ? AND status = 'active'`,
+      [
+        end_location,
+        end_lat,
+        end_lng,
+        distance_km,
+        waiting_minutes,
+        total_cost,
+        ride_id,
+      ],
+    );
+    return result.affectedRows > 0;
+  },
 };
 
 module.exports = Ride;

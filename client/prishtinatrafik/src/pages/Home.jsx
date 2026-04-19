@@ -1,3 +1,4 @@
+// client/src/pages/Home.jsx
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useLocation } from "../hooks/useLocation";
@@ -9,6 +10,8 @@ import VehicleFilters from "../components/map/VehicleFilters";
 import BuyTicketModel from "../components/tickets/BuyTicketModel";
 import QRCodeDisplay from "../components/tickets/QRCodeDisplay";
 import { Bike, Bus, Car, Scooter, Navigation } from "lucide-react";
+import taxiService from "../services/taxiService";
+import toast from "react-hot-toast";
 
 const TICKET_PRICES = {
   bus: 0.4,
@@ -16,6 +19,7 @@ const TICKET_PRICES = {
 };
 
 export default function Home() {
+  const { user } = useAuth();
   const {
     location,
     loading: locationLoading,
@@ -26,25 +30,25 @@ export default function Home() {
     loading: vehiclesLoading,
     selectedType,
     setSelectedType,
-    loadNearbyVehicles,
+    loadAllVehicles,
   } = useVehicles();
   const { buyTicket } = useTickets();
   const { startRide } = useRides();
 
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [actionType, setActionType] = useState(null); // 'buy' ose 'ride'
+  const [actionType, setActionType] = useState(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [purchasedTicket, setPurchasedTicket] = useState(null);
   const [showStartRideConfirm, setShowStartRideConfirm] = useState(false);
 
   useEffect(() => {
-    if (location?.lat && location?.lng) {
-      loadNearbyVehicles(location.lat, location.lng, selectedType);
-    }
-  }, [location?.lat, location?.lng, selectedType, loadNearbyVehicles]);
+    loadAllVehicles(selectedType);
+  }, [selectedType, loadAllVehicles]);
 
   const handleVehicleClick = (vehicle, action) => {
+    console.log("Vehicle clicked:", vehicle); // Debug
+    console.log("Action:", action); // Debug
     setSelectedVehicle(vehicle);
     setActionType(action);
 
@@ -54,7 +58,6 @@ export default function Home() {
       setShowStartRideConfirm(true);
     }
   };
-
   const handleBuyTicket = async (ticketData) => {
     const result = await buyTicket(ticketData);
     if (result) {
@@ -65,7 +68,48 @@ export default function Home() {
   };
 
   const handleStartRide = async () => {
-    if (selectedVehicle) {
+    if (!selectedVehicle) return;
+
+    console.log("Starting ride for:", selectedVehicle.vehicle_type);
+
+    // TAXI
+    if (selectedVehicle.vehicle_type === "taxi") {
+      if (!location) {
+        toast.error("Ju lutem aktivizoni lokacionin");
+        return;
+      }
+
+      try {
+        const response = await taxiService.startTaxiRide({
+          start_lat: location.lat,
+          start_lng: location.lng,
+          start_location: `Pozita: ${location.lat}, ${location.lng}`,
+        });
+
+        if (response.success) {
+          toast.success("Udhëtimi me taksi filloi!");
+          setShowStartRideConfirm(false);
+          setSelectedVehicle(null);
+          window.location.href = "/rides";
+        }
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || "Gabim gjatë fillimit të udhëtimit",
+        );
+      }
+      return;
+    }
+
+    if (selectedVehicle.vehicle_type === "bus") {
+      setShowBuyModal(true);
+      setShowStartRideConfirm(false);
+      return;
+    }
+
+    if (
+      selectedVehicle.vehicle_type === "bike" ||
+      selectedVehicle.vehicle_type === "scooter"
+    ) {
       await startRide(
         selectedVehicle.vehicle_id,
         selectedVehicle.vehicle_type,
@@ -73,6 +117,7 @@ export default function Home() {
       );
       setShowStartRideConfirm(false);
       setSelectedVehicle(null);
+      return;
     }
   };
 
@@ -115,7 +160,6 @@ export default function Home() {
         />
       )}
 
-      {/* Butoni i lokacionit */}
       <button
         onClick={getCurrentLocation}
         className="absolute top-4 right-4 z-20 bg-white dark:bg-gray-800 rounded-full p-2 md:p-3 shadow-md"
@@ -123,14 +167,13 @@ export default function Home() {
         <Navigation className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
       </button>
 
-      {/* Filtrat */}
       <VehicleFilters
         selectedType={selectedType}
         onSelectType={setSelectedType}
       />
 
-      {/* Karta e statistikave */}
       <div className="absolute bottom-35 left-3 right-3 z-20 md:bottom-6 md:left-auto md:right-6 md:w-80">
+        {/* Mobile version */}
         <div className="block md:hidden">
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 dark:border-gray-700/50">
             <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
@@ -189,6 +232,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Desktop version */}
         <div className="hidden md:block">
           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -271,7 +315,17 @@ export default function Home() {
         </div>
       </div>
 
-      
+      {/* Welcome Message */}
+      {user && (
+        <div className="absolute top-4 left-3 z-20 pointer-events-none animate-fade-out md:top-20 md:left-4">
+          <div className="bg-green-500/90 backdrop-blur px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-lg">
+            <p className="text-xs md:text-sm font-medium text-white">
+              👋 Përshëndetje,{" "}
+              {user.fullname?.split(" ")[0] || user.name || "User"}!
+            </p>
+          </div>
+        </div>
+      )}
 
       <BuyTicketModel
         isOpen={showBuyModal}
@@ -299,22 +353,16 @@ export default function Home() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6">
             <div className="text-center mb-4">
               <div className="text-5xl mb-3">
-                {selectedVehicle.vehicle_type === "bike"
-                  ? "🚲"
-                  : selectedVehicle.vehicle_type === "scooter"
-                    ? "🛴"
-                    : selectedVehicle.vehicle_type === "bus"
-                      ? "🚌"
-                      : "🚕"}
+                {selectedVehicle.vehicle_type === "bike" && "🚲"}
+                {selectedVehicle.vehicle_type === "scooter" && "🛴"}
+                {selectedVehicle.vehicle_type === "bus" && "🚌"}
+                {selectedVehicle.vehicle_type === "taxi" && "🚕"}
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                {selectedVehicle.vehicle_type === "bike"
-                  ? "Biçikletë"
-                  : selectedVehicle.vehicle_type === "scooter"
-                    ? "Scooter"
-                    : selectedVehicle.vehicle_type === "bus"
-                      ? "Autobus"
-                      : "Taksi"}
+                {selectedVehicle.vehicle_type === "bike" && "Biçikletë"}
+                {selectedVehicle.vehicle_type === "scooter" && "Scooter"}
+                {selectedVehicle.vehicle_type === "bus" && "Autobus"}
+                {selectedVehicle.vehicle_type === "taxi" && "Taksi"}
               </h3>
               <p className="text-gray-500 dark:text-gray-400">
                 ID: {selectedVehicle.vehicle_id}
@@ -337,6 +385,27 @@ export default function Home() {
                     Minimumi:
                   </span>
                   <span className="font-semibold">€1.00</span>
+                </div>
+              </div>
+            ) : selectedVehicle.vehicle_type === "taxi" ? (
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-xl p-4 mb-6">
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600 dark:text-gray-300">
+                    Tarifa e nisjes:
+                  </span>
+                  <span className="font-semibold">€1.50</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-gray-600 dark:text-gray-300">
+                    Për km:
+                  </span>
+                  <span className="font-semibold">€0.80</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-300">
+                    Për minutë pritje:
+                  </span>
+                  <span className="font-semibold">€0.20</span>
                 </div>
               </div>
             ) : (
@@ -369,7 +438,9 @@ export default function Home() {
                 {selectedVehicle.vehicle_type === "bike" ||
                 selectedVehicle.vehicle_type === "scooter"
                   ? "🚲 Fillo"
-                  : "🎫 Bli tani"}
+                  : selectedVehicle.vehicle_type === "taxi"
+                    ? "🚕 Fillo"
+                    : "🎫 Bli tani"}
               </button>
             </div>
           </div>

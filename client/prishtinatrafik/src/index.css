@@ -13,3 +13,19 @@ body {
     scrollbar-width: none;
   }
 }
+#qr-reader {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+#qr-reader video {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+#qr-reader__scan_region {
+  border-radius: 12px;
+  overflow: hidden;
+}

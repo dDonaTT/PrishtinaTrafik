@@ -1,3 +1,4 @@
+// client/src/components/map/MapView.jsx
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -113,12 +114,42 @@ const MapView = ({
         </div>
       `;
 
-      const isTicketVehicle = vehicle.vehicle_type === 'bus' || vehicle.vehicle_type === 'taxi';
+      // Përcakto nëse është biletë (bus) apo udhëtim (taxi, bike, scooter)
+      const isTicketVehicle = vehicle.vehicle_type === 'bus';
+      const isTaxiVehicle = vehicle.vehicle_type === 'taxi';
+      const isRideVehicle = vehicle.vehicle_type === 'bike' || vehicle.vehicle_type === 'scooter';
+      
+      // Përcakto veprimin dhe tekstin e butonit
+      let buttonAction = 'ride';
+      let buttonText = '🚲 Fillo udhëtimin';
+      let buttonColor = '#10b981';
+      
+      if (isTicketVehicle) {
+        buttonAction = 'buy';
+        buttonText = '🎫 Bli biletë';
+        buttonColor = '#2563eb';
+      } else if (isTaxiVehicle) {
+        buttonAction = 'ride';
+        buttonText = '🚕 Fillo udhëtimin';
+        buttonColor = '#10b981';
+      } else if (isRideVehicle) {
+        buttonAction = 'ride';
+        buttonText = '🚲 Fillo udhëtimin';
+        buttonColor = '#10b981';
+      }
+      
+      // Përcakto titullin e popup
+      let vehicleTitle = '';
+      if (vehicle.vehicle_type === 'bus') vehicleTitle = '🚌 Autobus';
+      else if (vehicle.vehicle_type === 'taxi') vehicleTitle = '🚕 Taksi';
+      else if (vehicle.vehicle_type === 'bike') vehicleTitle = '🚲 Biçikletë';
+      else if (vehicle.vehicle_type === 'scooter') vehicleTitle = '🛴 Scooter';
+      else vehicleTitle = vehicle.vehicle_type;
       
       let popupHTML = `
         <div style="padding: 12px; text-align: center; font-family: sans-serif; min-width: 180px;">
           <h4 style="margin: 0; color: #1f2937; text-transform: capitalize; font-size: 16px; font-weight: bold;">
-            ${vehicle.vehicle_type === 'bus' ? '🚌 Autobus' : '🚕 Taksi'}
+            ${vehicleTitle}
           </h4>
           <p style="margin: 5px 0; font-size: 12px; color: #6b7280;">ID: ${vehicle.vehicle_id}</p>
       `;
@@ -139,27 +170,23 @@ const MapView = ({
             <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">Biletë e vetme</p>
           </div>
         `;
+      } else if (isTaxiVehicle) {
+        popupHTML += `
+          <div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Tarifa e nisjes: €1.50</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">€0.80/km + €0.20/min pritje</p>
+          </div>
+        `;
       }
       
-      if (isTicketVehicle) {
-        popupHTML += `
-          <button id="buy-ticket-${vehicle.id || vehicle.vehicle_id}" style="
-            background: #2563eb; color: white; border: none; 
-            padding: 10px 16px; border-radius: 8px; cursor: pointer;
-            width: 100%; font-weight: 600; margin-top: 8px;
-            font-size: 14px;
-          ">🎫 Bli biletë</button>
-        `;
-      } else {
-        popupHTML += `
-          <button id="start-ride-${vehicle.id || vehicle.vehicle_id}" style="
-            background: #10b981; color: white; border: none; 
-            padding: 10px 16px; border-radius: 8px; cursor: pointer;
-            width: 100%; font-weight: 600; margin-top: 8px;
-            font-size: 14px;
-          ">🚲 Fillo udhëtimin</button>
-        `;
-      }
+      popupHTML += `
+        <button id="${buttonAction === 'buy' ? `buy-ticket-${vehicle.id || vehicle.vehicle_id}` : `start-ride-${vehicle.id || vehicle.vehicle_id}`}" style="
+          background: ${buttonColor}; color: white; border: none; 
+          padding: 10px 16px; border-radius: 8px; cursor: pointer;
+          width: 100%; font-weight: 600; margin-top: 8px;
+          font-size: 14px;
+        ">${buttonText}</button>
+      `;
       
       popupHTML += `</div>`;
 
@@ -171,24 +198,14 @@ const MapView = ({
         .addTo(map.current);
 
       popup.on("open", () => {
-        if (isTicketVehicle) {
-          const btn = document.getElementById(`buy-ticket-${vehicle.id || vehicle.vehicle_id}`);
-          if (btn) {
-            btn.onclick = (e) => {
-              e.stopPropagation();
-              popup.remove();
-              onVehicleClick(vehicle, 'buy');
-            };
-          }
-        } else {
-          const btn = document.getElementById(`start-ride-${vehicle.id || vehicle.vehicle_id}`);
-          if (btn) {
-            btn.onclick = (e) => {
-              e.stopPropagation();
-              popup.remove();
-              onVehicleClick(vehicle, 'ride');
-            };
-          }
+        const btnId = buttonAction === 'buy' ? `buy-ticket-${vehicle.id || vehicle.vehicle_id}` : `start-ride-${vehicle.id || vehicle.vehicle_id}`;
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            popup.remove();
+            onVehicleClick(vehicle, buttonAction);
+          };
         }
       });
 
