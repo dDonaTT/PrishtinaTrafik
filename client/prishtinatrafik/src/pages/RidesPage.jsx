@@ -31,17 +31,20 @@ export default function RidesPage() {
   }, [activeRide]);
 
   const handleScanQR = () => {
-    setScanning(true);
-    setTimeout(() => {
-      const mockVehicle = {
-        vehicle_id: 'TAXI-001',
-        vehicle_type: 'taxi'
-      };
-      setSelectedVehicle(mockVehicle);
-      setScanning(false);
-      setShowStartModal(true);
-    }, 2000);
-  };
+  setScanning(true);
+  setTimeout(() => {
+    const vehicleTypes = ['bike', 'scooter', 'taxi'];
+    const randomType = vehicleTypes[Math.floor(Math.random() * vehicleTypes.length)];
+    
+    const mockVehicle = {
+      vehicle_id: `${randomType.toUpperCase()}-001`,
+      vehicle_type: randomType
+    };
+    setSelectedVehicle(mockVehicle);
+    setScanning(false);
+    setShowStartModal(true);
+  }, 2000);
+};
 
   const handleStartRide = async () => {
   if (!selectedVehicle) return;
@@ -77,7 +80,6 @@ export default function RidesPage() {
       toast.error(error.response?.data?.message || 'Gabim gjatë fillimit të udhëtimit');
     }
   } else {
-    // Bike/Scooter
     await startRide(
       selectedVehicle.vehicle_id,
       selectedVehicle.vehicle_type,

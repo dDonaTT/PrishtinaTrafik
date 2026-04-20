@@ -12,7 +12,16 @@ router.put("/cancel", authMiddleware, rideController.cancelRide);
 router.get("/all", authMiddleware, rideController.getAllVehicles);
 router.post("/taxi/start", authMiddleware, rideController.startTaxiRide);
 router.post("/taxi/end", authMiddleware, rideController.endTaxiRide);
-router.get("/taxi/fare/:ride_id", authMiddleware, rideController.getCurrentTaxiFare);
-router.put("/taxi/location/:ride_id", authMiddleware, rideController.updateTaxiLocation);
+router.get(
+  "/taxi/fare/:ride_id",
+  authMiddleware,
+  rideController.getCurrentTaxiFare,
+);
+router.put(
+  "/taxi/location/:ride_id",
+  authMiddleware,
+  rideController.updateTaxiLocation,
+);
+router.get("/eta", authMiddleware, rideController.getETA);
 
 module.exports = router;

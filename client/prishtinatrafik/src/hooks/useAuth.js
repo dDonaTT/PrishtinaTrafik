@@ -1,41 +1,39 @@
 // client/src/hooks/useAuth.js
-import { useState, useEffect } from 'react';
-import { 
-  register as registerService, 
-  login as loginService, 
+import { useState, useEffect } from "react";
+import {
+  register as registerService,
+  login as loginService,
   logout as logoutService,
   getCurrentUser,
   getToken,
   isAuthenticated as checkAuth,
-  getLoginTime
-} from '../services/authService';
-import toast from 'react-hot-toast';
+  getLoginTime,
+} from "../services/authService";
+import toast from "react-hot-toast";
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Funksioni i thjeshtë pa recursion
     const initAuth = () => {
       const currentUser = getCurrentUser();
       const token = getToken();
-      
+
       if (currentUser && token) {
-        // Verifiko nëse token ka skaduar
         try {
           const payload = JSON.parse(atob(token.split(".")[1]));
           const tokenExp = payload.exp * 1000;
           const now = Date.now();
-          
+
           if (tokenExp > now) {
             setUser(currentUser);
             setIsAuthenticated(true);
             updateTimeRemaining();
           } else {
-            // Token ka skaduar
             logoutService();
           }
         } catch (error) {
@@ -45,10 +43,9 @@ export const useAuth = () => {
       }
       setLoading(false);
     };
-    
+
     initAuth();
-    
-    // Kontrollo çdo 5 minuta nëse token ka skaduar
+
     const interval = setInterval(() => {
       if (isAuthenticated) {
         const token = getToken();
@@ -57,20 +54,20 @@ export const useAuth = () => {
             const payload = JSON.parse(atob(token.split(".")[1]));
             const tokenExp = payload.exp * 1000;
             const now = Date.now();
-            
+
             if (tokenExp < now) {
               logoutService();
               setIsAuthenticated(false);
               setUser(null);
-              toast.error('Sesioni ka skaduar. Ju lutemi rihuni.');
+              toast.error("Sesioni ka skaduar. Ju lutemi rihuni.");
             }
           } catch (error) {
             console.error("Token check error:", error);
           }
         }
       }
-    }, 300000); // Çdo 5 minuta
-    
+    }, 300000);
+
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
@@ -92,17 +89,21 @@ export const useAuth = () => {
   };
 
   const login = async (credentials) => {
+    setError(null);
     try {
       setLoading(true);
       const response = await loginService(credentials);
       setUser(response.user);
       setIsAuthenticated(true);
-      updateTimeRemaining();
-      toast.success('Login successful!');
-      return response;
-    } catch (error) {
-      toast.error(error.message || 'Login failed');
-      throw error;
+      toast.success("Identifikimi i suksesshëm!");
+      return { success: true };
+    } catch (err) {
+      console.error("Login error:", err);
+      const errorMessage =
+        err.message || "Email ose fjalëkalimi janë të gabuara";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -115,10 +116,10 @@ export const useAuth = () => {
       setUser(response.user);
       setIsAuthenticated(true);
       updateTimeRemaining();
-      toast.success('Registration successful!');
+      toast.success("Registration successful!");
       return response;
     } catch (error) {
-      toast.error(error.message || 'Registration failed');
+      toast.error(error.message || "Registration failed");
       throw error;
     } finally {
       setLoading(false);
@@ -130,7 +131,7 @@ export const useAuth = () => {
     setUser(null);
     setIsAuthenticated(false);
     setTimeRemaining(null);
-    toast.success('Logged out successfully');
+    toast.success("Logged out successfully");
   };
 
   return {

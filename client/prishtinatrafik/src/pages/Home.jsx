@@ -1,14 +1,18 @@
-// client/src/pages/Home.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useLocation } from "../hooks/useLocation";
 import { useVehicles } from "../hooks/useVehicles";
 import { useTickets } from "../hooks/useTickets";
 import { useRides } from "../hooks/useRides";
+import { useBus } from "../hooks/useBus";
 import MapView from "../components/map/MapView";
 import VehicleFilters from "../components/map/VehicleFilters";
 import BuyTicketModel from "../components/tickets/BuyTicketModel";
 import QRCodeDisplay from "../components/tickets/QRCodeDisplay";
+import BusRoutesPanel from "../components/bus/BusRoutesPanel";
+import BusStopsLayer from "../components/bus/BusStopsLayer";
+import StopRoutesModal from "../components/bus/StopRoutesModal";
+import RouteDetailsModal from "../components/bus/RouteDetailsModal";
 import { Bike, Bus, Car, Scooter, Navigation } from "lucide-react";
 import taxiService from "../services/taxiService";
 import toast from "react-hot-toast";
@@ -34,6 +38,7 @@ export default function Home() {
   } = useVehicles();
   const { buyTicket } = useTickets();
   const { startRide } = useRides();
+  const { routes, allStops, loadNearbyStops } = useBus();
 
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [actionType, setActionType] = useState(null);
@@ -41,14 +46,25 @@ export default function Home() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [purchasedTicket, setPurchasedTicket] = useState(null);
   const [showStartRideConfirm, setShowStartRideConfirm] = useState(false);
+  const [showRoutesPanel, setShowRoutesPanel] = useState(false);
+  const [showBusStops, setShowBusStops] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [selectedStop, setSelectedStop] = useState(null);
+  const [showStopRoutesModal, setShowStopRoutesModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [showRouteDetailsModal, setShowRouteDetailsModal] = useState(false);
 
   useEffect(() => {
     loadAllVehicles(selectedType);
   }, [selectedType, loadAllVehicles]);
 
+  useEffect(() => {
+    if (location) {
+      loadNearbyStops(location.lat, location.lng, 2);
+    }
+  }, [location, loadNearbyStops]);
+
   const handleVehicleClick = (vehicle, action) => {
-    console.log("Vehicle clicked:", vehicle); // Debug
-    console.log("Action:", action); // Debug
     setSelectedVehicle(vehicle);
     setActionType(action);
 
@@ -58,6 +74,7 @@ export default function Home() {
       setShowStartRideConfirm(true);
     }
   };
+
   const handleBuyTicket = async (ticketData) => {
     const result = await buyTicket(ticketData);
     if (result) {
@@ -70,9 +87,6 @@ export default function Home() {
   const handleStartRide = async () => {
     if (!selectedVehicle) return;
 
-    console.log("Starting ride for:", selectedVehicle.vehicle_type);
-
-    // TAXI
     if (selectedVehicle.vehicle_type === "taxi") {
       if (!location) {
         toast.error("Ju lutem aktivizoni lokacionin");
@@ -149,7 +163,6 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
-      {/* Harta */}
       {location && (
         <MapView
           vehicles={vehicles}
@@ -157,6 +170,10 @@ export default function Home() {
           center={location}
           zoom={14}
           onVehicleClick={handleVehicleClick}
+          onMapLoad={(map) => {
+            console.log("Map loaded:", map);
+            setMapInstance(map);
+          }}
         />
       )}
 
@@ -167,13 +184,30 @@ export default function Home() {
         <Navigation className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
       </button>
 
+      <button
+        onClick={() => setShowRoutesPanel(true)}
+        className="absolute bottom-36 left-4 z-20 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
+      >
+        <Bus className="w-5 h-5" />
+      </button>
+
+      <button
+        onClick={() => setShowBusStops(!showBusStops)}
+        className={`absolute bottom-36 left-20 z-20 p-3 rounded-full shadow-lg transition-all ${
+          showBusStops
+            ? "bg-green-600 text-white"
+            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+        }`}
+      >
+        🚏
+      </button>
+
       <VehicleFilters
         selectedType={selectedType}
         onSelectType={setSelectedType}
       />
 
       <div className="absolute bottom-35 left-3 right-3 z-20 md:bottom-6 md:left-auto md:right-6 md:w-80">
-        {/* Mobile version */}
         <div className="block md:hidden">
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-xl shadow-lg border border-white/20 dark:border-gray-700/50">
             <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
@@ -232,7 +266,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Desktop version */}
         <div className="hidden md:block">
           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -314,18 +347,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* Welcome Message */}
-      {user && (
-        <div className="absolute top-4 left-3 z-20 pointer-events-none animate-fade-out md:top-20 md:left-4">
-          <div className="bg-green-500/90 backdrop-blur px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-lg">
-            <p className="text-xs md:text-sm font-medium text-white">
-              👋 Përshëndetje,{" "}
-              {user.fullname?.split(" ")[0] || user.name || "User"}!
-            </p>
-          </div>
-        </div>
-      )}
 
       <BuyTicketModel
         isOpen={showBuyModal}
@@ -445,6 +466,53 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+
+      {showRoutesPanel && (
+        <div className="absolute inset-0 z-30 bg-black/50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full">
+            <BusRoutesPanel
+              routes={routes}
+              onSelectRoute={(route) => {
+                console.log("Selected route:", route);
+                setShowRoutesPanel(false);
+                // Në vend të toast, hap një modal me detajet e linjës
+                setSelectedRoute(route);
+                setShowRouteDetailsModal(true);
+              }}
+              onClose={() => setShowRoutesPanel(false)}
+            />
+          </div>
+        </div>
+      )}
+      {showRouteDetailsModal && selectedRoute && (
+        <RouteDetailsModal
+          route={selectedRoute}
+          onClose={() => {
+            setShowRouteDetailsModal(false);
+            setSelectedRoute(null);
+          }}
+        />
+      )}
+
+      {location && showBusStops && mapInstance && (
+        <BusStopsLayer
+          map={mapInstance}
+          stops={allStops}
+          onStopClick={(stop) => {
+            setSelectedStop(stop);
+            setShowStopRoutesModal(true);
+          }}
+        />
+      )}
+      {showStopRoutesModal && selectedStop && (
+        <StopRoutesModal
+          stop={selectedStop}
+          onClose={() => {
+            setShowStopRoutesModal(false);
+            setSelectedStop(null);
+          }}
+        />
       )}
     </div>
   );

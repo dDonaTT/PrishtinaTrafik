@@ -30,7 +30,8 @@ const login = async (credentials) => {
     }
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "Login failed" };
+    console.error("Login service error:", error);
+    throw error.response?.data || { message: "Invalid credentials" };
   }
 };
 
@@ -39,7 +40,6 @@ const logout = () => {
   localStorage.removeItem("user");
   localStorage.removeItem("loginTime");
   window.location.href = "/login";
-  // Mos e bëj window.location.href këtu
 };
 
 const getCurrentUser = () => {

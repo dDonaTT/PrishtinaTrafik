@@ -1,4 +1,3 @@
-// client/src/components/map/MapView.jsx
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -24,6 +23,7 @@ const MapView = ({
   center,
   zoom = 13,
   onVehicleClick,
+  onMapLoad,  
 }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -47,6 +47,9 @@ const MapView = ({
       map.current.on("load", () => {
         setIsMapLoaded(true);
         map.current.resize();
+        if (onMapLoad) {
+          onMapLoad(map.current);
+        }
       });
 
       map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -59,6 +62,12 @@ const MapView = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (map.current && onMapLoad && isMapLoaded) {
+      onMapLoad(map.current);
+    }
+  }, [isMapLoaded, onMapLoad]);
 
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
@@ -114,12 +123,10 @@ const MapView = ({
         </div>
       `;
 
-      // Përcakto nëse është biletë (bus) apo udhëtim (taxi, bike, scooter)
       const isTicketVehicle = vehicle.vehicle_type === 'bus';
       const isTaxiVehicle = vehicle.vehicle_type === 'taxi';
       const isRideVehicle = vehicle.vehicle_type === 'bike' || vehicle.vehicle_type === 'scooter';
       
-      // Përcakto veprimin dhe tekstin e butonit
       let buttonAction = 'ride';
       let buttonText = '🚲 Fillo udhëtimin';
       let buttonColor = '#10b981';
@@ -138,7 +145,6 @@ const MapView = ({
         buttonColor = '#10b981';
       }
       
-      // Përcakto titullin e popup
       let vehicleTitle = '';
       if (vehicle.vehicle_type === 'bus') vehicleTitle = '🚌 Autobus';
       else if (vehicle.vehicle_type === 'taxi') vehicleTitle = '🚕 Taksi';

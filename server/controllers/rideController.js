@@ -1,5 +1,5 @@
 const rideService = require("../services/rideService");
-
+const etaService = require("../services/etaService");
 const startRide = async (req, res) => {
   try {
     const ride = await rideService.startRide(req.user, req.body);
@@ -236,6 +236,36 @@ const updateTaxiLocation = async (req, res) => {
         });
     }
 };
+const getETA = async (req, res) => {
+    try {
+        const { start_lat, start_lng, end_lat, end_lng } = req.query;
+        
+        if (!start_lat || !start_lng || !end_lat || !end_lng) {
+            return res.status(400).json({
+                success: false,
+                message: "Start and end coordinates are required"
+            });
+        }
+        
+        const eta = await etaService.calculateETA(
+            parseFloat(start_lat),
+            parseFloat(start_lng),
+            parseFloat(end_lat),
+            parseFloat(end_lng)
+        );
+        
+        return res.status(200).json({
+            success: true,
+            data: eta
+        });
+    } catch (error) {
+        console.error("GET ETA ERROR:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 module.exports = {
     startRide,
@@ -248,5 +278,6 @@ module.exports = {
     startTaxiRide,
     endTaxiRide,
     getCurrentTaxiFare,
-    updateTaxiLocation
+    updateTaxiLocation,
+    getETA
 };

@@ -1,14 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, TrendingUp, DollarSign, Navigation, X } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+import { MapPin, Clock, TrendingUp, DollarSign, Navigation, X, Target } from 'lucide-react';
 import taxiService from '../../services/taxiService';
 import toast from 'react-hot-toast';
 
-export default function TaxiMeter({ ride, onEndRide, currentLocation }) {
+export default function TaxiMeter({ ride, onEndRide, currentLocation, destination }) {
     const [fare, setFare] = useState(0);
     const [distance, setDistance] = useState(0);
     const [waitingTime, setWaitingTime] = useState(0);
     const [elapsedMinutes, setElapsedMinutes] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [eta, setEta] = useState(null);
+    const [destinationSet, setDestinationSet] = useState(false);
+    const [destinationCoords, setDestinationCoords] = useState(null);
+
+    const calculateETA = async () => {
+        if (!destinationCoords || !currentLocation) return;
+        
+        try {
+            const response = await taxiService.getETA(
+                currentLocation.lat,
+                currentLocation.lng,
+                destinationCoords.lat,
+                destinationCoords.lng
+            );
+            
+            if (response.success && response.data) {
+                setEta(response.data);
+            }
+        } catch (error) {
+            console.error('ETA calculation error:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (destinationCoords && currentLocation) {
+            calculateETA();
+        }
+    }, [destinationCoords, currentLocation]);
 
     useEffect(() => {
         if (!ride || !currentLocation) return;
@@ -34,10 +63,19 @@ export default function TaxiMeter({ ride, onEndRide, currentLocation }) {
 
         fetchFare();
         
-        const interval = setInterval(fetchFare, 10000); // Çdo 10 sekonda
+        const interval = setInterval(fetchFare, 10000);
         
         return () => clearInterval(interval);
     }, [ride, currentLocation]);
+
+    const handleSetDestination = () => {
+        setDestinationCoords({
+            lat: 42.6600,
+            lng: 21.1600
+        });
+        setDestinationSet(true);
+        toast.success('Destinacioni u vendos!');
+    };
 
     const handleEndRide = async () => {
         if (!confirm('A jeni i sigurt që dëshironi të përfundoni udhëtimin?')) return;
@@ -45,8 +83,8 @@ export default function TaxiMeter({ ride, onEndRide, currentLocation }) {
         setLoading(true);
         try {
             const result = await taxiService.endTaxiRide(ride.ride_id, {
-                end_lat: currentLocation.lat,
-                end_lng: currentLocation.lng,
+                end_lat: destinationCoords?.lat || currentLocation.lat,
+                end_lng: destinationCoords?.lng || currentLocation.lng,
                 end_location: 'Destinacioni'
             });
             
@@ -79,10 +117,45 @@ export default function TaxiMeter({ ride, onEndRide, currentLocation }) {
                     <p className="text-4xl md:text-5xl font-bold">€{fare.toFixed(2)}</p>
                 </div>
                 
+                {/* Butoni për të vendosur destinacionin */}
+                {!destinationSet ? (
+                    <button
+                        onClick={handleSetDestination}
+                        className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg flex items-center justify-center gap-2 mb-4 transition-all"
+                    >
+                        <Target className="w-4 h-4" />
+                        Vendos destinacionin
+                    </button>
+                ) : (
+                    <div className="bg-white/10 rounded-lg p-3 mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Target className="w-4 h-4" />
+                            <span className="text-sm font-semibold">ETA deri në destinacion</span>
+                        </div>
+                        {eta ? (
+                            <div className="grid grid-cols-2 gap-2 text-center">
+                                <div>
+                                    <p className="text-xs opacity-80">Koha e mbetur</p>
+                                    <p className="text-xl font-bold">{eta.eta_minutes} min</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs opacity-80">Distanca</p>
+                                    <p className="text-xl font-bold">{eta.distance_km} km</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                <p className="text-xs mt-1">Duke llogaritur...</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+                
                 <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="bg-white/10 rounded-lg p-2 text-center">
                         <MapPin className="w-4 h-4 mx-auto mb-1" />
-                        <p className="text-xs opacity-80">Distanca</p>
+                        <p className="text-xs opacity-80">Distanca e përshkuar</p>
                         <p className="text-lg font-semibold">{distance} km</p>
                     </div>
                     <div className="bg-white/10 rounded-lg p-2 text-center">
