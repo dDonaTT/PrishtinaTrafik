@@ -2,8 +2,8 @@ const mysql = require("mysql2");
 
 let pool;
 
-if (process.env.MYSQL_PUBLIC_URL && process.env.NODE_ENV !== "production") {
-  console.log("🌍 Connecting to Railway MySQL via PUBLIC URL");
+if (process.env.MYSQL_PUBLIC_URL) {
+  console.log("🌍 Connecting to Railway MySQL via PUBLIC URL");s
 
   pool = mysql
     .createPool({
