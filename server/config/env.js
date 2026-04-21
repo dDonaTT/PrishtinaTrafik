@@ -1,22 +1,29 @@
 require("dotenv").config();
 
-const required = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_DATABASE'];
+const isRailway = !!process.env.MYSQL_URL;
+
+let required = ["JWT_SECRET"];
+if (!isRailway) {
+  required = ["JWT_SECRET", "DB_HOST", "DB_USER", "DB_DATABASE"];
+}
 
 required.forEach((key) => {
   if (!process.env[key]) {
-    throw new Error(`Missing environment variable: ${key}`);
+    console.warn(`Warning: Missing environment variable: ${key}`);
   }
 });
 
 module.exports = {
-  PORT: process.env.PORT || 5000,
-  JWT_SECRET: process.env.JWT_SECRET,
-  JWT_EXPIRES_IN: '7d',
+  PORT: process.env.PORT || 8000,
+  JWT_SECRET: process.env.JWT_SECRET || "temp_secret_key_change_me",
+  JWT_EXPIRES_IN: "7d",
   NODE_ENV: process.env.NODE_ENV || "development",
 
-  DB_HOST: process.env.DB_HOST,
-  DB_USER: process.env.DB_USER,
+  MYSQL_URL: process.env.MYSQL_URL,
+
+  DB_HOST: process.env.DB_HOST || "localhost",
+  DB_USER: process.env.DB_USER || "root",
   DB_PASSWORD: process.env.DB_PASSWORD || "",
-  DB_DATABASE: process.env.DB_DATABASE,
+  DB_DATABASE: process.env.DB_DATABASE || "prishtina_trafik",
   DB_PORT: process.env.DB_PORT || 3306,
 };

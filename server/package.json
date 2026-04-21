@@ -10,8 +10,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "stripe": "stripe listen --forward-to localhost:8000/api/webhook/webhook",
-    "start:all": "concurrently \"npm run dev\" \"npm run stripe\"",
-    "deploy": "concurrently \"npm run start\" \"npm run stripe\""
+    "start:all": "concurrently \"npm run dev\" \"npm run stripe\""
   },
   "dependencies": {
     "axios": "^1.15.1",
@@ -25,7 +24,7 @@
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
     "stripe": "^22.0.1",
-    "uuid": "^13.0.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
