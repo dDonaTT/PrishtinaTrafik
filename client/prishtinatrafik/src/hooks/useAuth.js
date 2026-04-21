@@ -89,19 +89,16 @@ export const useAuth = () => {
   };
 
   const login = async (credentials) => {
-    setError(null);
     try {
       setLoading(true);
       const response = await loginService(credentials);
       setUser(response.user);
       setIsAuthenticated(true);
-      toast.success("Identifikimi i suksesshëm!");
+      toast.success('Identifikimi i suksesshëm!');
       return { success: true };
     } catch (err) {
       console.error("Login error:", err);
-      const errorMessage =
-        err.message || "Email ose fjalëkalimi janë të gabuara";
-      setError(errorMessage);
+      const errorMessage = err.message || 'Email ose fjalëkalimi janë të gabuara';
       toast.error(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -109,18 +106,33 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (userData) => {
+ const register = async (userData) => {
     try {
       setLoading(true);
       const response = await registerService(userData);
-      setUser(response.user);
-      setIsAuthenticated(true);
-      updateTimeRemaining();
-      toast.success("Registration successful!");
-      return response;
-    } catch (error) {
-      toast.error(error.message || "Registration failed");
-      throw error;
+      console.log('Register response:', response); // Debug
+      
+      // Kontrollo nëse regjistrimi ishte i suksesshëm
+      if (response && response.token) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        toast.success('Regjistrimi i suksesshëm!');
+        return { success: true };
+      } else {
+        const loginResponse = await loginService({
+          email: userData.email,
+          password: userData.password
+        });
+        setUser(loginResponse.user);
+        setIsAuthenticated(true);
+        toast.success('Regjistrimi i suksesshëm!');
+        return { success: true };
+      }
+    } catch (err) {
+      console.error("Register error:", err);
+      const errorMessage = err.message || 'Gabim gjatë regjistrimit';
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
