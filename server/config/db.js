@@ -3,7 +3,7 @@ const mysql = require("mysql2");
 let pool;
 
 if (process.env.MYSQL_PUBLIC_URL) {
-  console.log("🌍 Connecting to Railway MySQL via PUBLIC URL");s
+  console.log("🌍 Connecting to Railway MySQL via PUBLIC URL");
 
   pool = mysql
     .createPool({
