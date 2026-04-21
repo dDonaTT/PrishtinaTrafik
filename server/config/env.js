@@ -13,8 +13,12 @@ required.forEach((key) => {
   }
 });
 
+const PORT = process.env.PORT || 8000;
+
+console.log(`Config loaded - PORT: ${PORT}, isRailway: ${isRailway}`);
+
 module.exports = {
-  PORT: process.env.PORT || 8000,
+  PORT: PORT,
   JWT_SECRET: process.env.JWT_SECRET || "temp_secret_key_change_me",
   JWT_EXPIRES_IN: "7d",
   NODE_ENV: process.env.NODE_ENV || "development",
