@@ -2,25 +2,33 @@ const mysql = require("mysql2");
 
 let pool;
 
-if (process.env.MYSQL_URL) {
-  console.log("Connecting to Railway MySQL via internal URL");
+if (process.env.MYSQL_PUBLIC_URL && process.env.NODE_ENV !== "production") {
+  console.log("🌍 Connecting to Railway MySQL via PUBLIC URL");
+
+  pool = mysql
+    .createPool({
+      uri: process.env.MYSQL_PUBLIC_URL,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      connectTimeout: 60000,
+    })
+    .promise();
+} else if (process.env.MYSQL_URL) {
+  console.log("🚄 Connecting to Railway MySQL via INTERNAL URL");
+
   pool = mysql
     .createPool({
       uri: process.env.MYSQL_URL,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
-      connectTimeout: 60000,  
-      acquireTimeout: 60000,
-      timeout: 60000
+      connectTimeout: 60000,
     })
     .promise();
-} 
-else if (process.env.MYSQLHOST) {
-  console.log("Connecting to Railway MySQL via individual variables");
-  console.log(`Host: ${process.env.MYSQLHOST}, Port: ${process.env.MYSQLPORT}`);
+} else if (process.env.MYSQLHOST) {
+  console.log("⚙️ Connecting via individual Railway variables");
+
   pool = mysql
     .createPool({
       host: process.env.MYSQLHOST,
@@ -31,22 +39,18 @@ else if (process.env.MYSQLHOST) {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
       connectTimeout: 60000,
-      acquireTimeout: 60000,
-      timeout: 60000
     })
     .promise();
-}
-else {
-  console.log("Connecting to local MySQL");
+} else {
+  console.log("💻 Connecting to LOCAL MySQL");
+
   pool = mysql
     .createPool({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || 'prishtina_trafik',
+      host: process.env.DB_HOST || "localhost",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "",
+      database: process.env.DB_DATABASE || "prishtina_trafik",
       port: process.env.DB_PORT || 3306,
       waitForConnections: true,
       connectionLimit: 10,
@@ -62,19 +66,21 @@ const testConnection = async (retries = 5) => {
       connection.release();
       return;
     } catch (err) {
-      console.error(`❌ Database connection attempt ${i + 1}/${retries} failed:`, err.message);
+      console.error(`❌ Attempt ${i + 1}/${retries} failed:`, err.message);
+
       if (i === retries - 1) {
-        console.error("💡 Make sure the database is running and accessible");
+        console.error("💡 Check DB access / Railway network");
       }
-      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      await new Promise((res) => setTimeout(res, 3000));
     }
   }
 };
 
 testConnection();
 
-pool.on('error', (err) => {
-  console.error('Unexpected database error:', err.message);
+pool.on("error", (err) => {
+  console.error("💥 Unexpected DB error:", err.message);
 });
 
 module.exports = pool;
