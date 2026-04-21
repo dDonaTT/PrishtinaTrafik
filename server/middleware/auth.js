@@ -26,5 +26,11 @@ const inspectorMiddleware = (req, res, next) => {
   }
   next();
 };
+const driverMiddleware = (req, res, next) => {
+  if (req.user.role !== "driver" && req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Driver only." });
+  }
+  next();
+};
 
 module.exports = {authMiddleware,adminMiddleware,inspectorMiddleware};

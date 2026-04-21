@@ -2,7 +2,17 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Toaster } from "react-hot-toast";
-import { Car, Bus, Bike, MapPin, ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import {
+  Car,
+  Bus,
+  Bike,
+  MapPin,
+  ArrowRight,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -47,15 +57,15 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
-    
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    
+
     const result = await login(formData);
-    
+
     if (result.success) {
       navigate("/");
     } else {
@@ -66,7 +76,7 @@ const Login = () => {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Toaster position="top-right" />
-      
+
       <div className="absolute top-0 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
       <div className="absolute top-0 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse delay-1000"></div>
       <div className="absolute -bottom-40 left-20 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse delay-2000"></div>
@@ -99,11 +109,11 @@ const Login = () => {
           <div className="text-center mb-8">
             <div className="relative inline-block">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur-2xl opacity-50"></div>
-              <div className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/10">
-                <img 
-                  src="/logo.svg" 
-                  alt="Prishtina Trafik" 
-                  className="w-20 h-20 object-contain mx-auto"
+              <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="Prishtina Trafik"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
               </div>
             </div>
@@ -116,12 +126,16 @@ const Login = () => {
           <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 p-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white">Mirë se vini!</h2>
-              <p className="text-purple-200/70 text-sm mt-1">Identifikohuni për të vazhduar</p>
+              <p className="text-purple-200/70 text-sm mt-1">
+                Identifikohuni për të vazhduar
+              </p>
             </div>
 
             {errorMessage && (
               <div className="mb-6 p-3 bg-red-500/20 border border-red-500/30 rounded-xl backdrop-blur animate-shake">
-                <p className="text-red-200 text-sm text-center">{errorMessage}</p>
+                <p className="text-red-200 text-sm text-center">
+                  {errorMessage}
+                </p>
               </div>
             )}
 
@@ -167,7 +181,11 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300/50 hover:text-purple-300 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 {errors.password && (

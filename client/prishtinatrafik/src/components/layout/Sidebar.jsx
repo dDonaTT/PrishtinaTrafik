@@ -37,7 +37,7 @@ export default function Sidebar() {
     <div className="w-20 h-screen bg-gray-900 border-r border-gray-800 flex flex-col items-center py-6 gap-2">
       <div className="w-16 h-16 mb-6">
         <img
-          src="/logo.svg"
+          src="/logo.png"
           alt="Prishtina Trafik"
           className="w-full h-full object-contain"
         />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Map, Wallet, Ticket, Bike, User, Shield } from 'lucide-react';
+import { Map, Wallet, Ticket, Bike, User, Shield, Bus, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -11,9 +11,10 @@ const baseNavItems = [
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 
-export default function MobileNav() {
+export default function MobileNav({ onShowRoutes, onShowStops, showStops }) {
   const location = useLocation();
   const { user } = useAuth();
+  const isHomePage = location.pathname === '/';
   
   const getNavItems = () => {
     const items = [...baseNavItems];
@@ -33,15 +34,40 @@ export default function MobileNav() {
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-b border-gray-800">
-        <img 
-          src="/logo.png" 
-          alt="Prishtina Trafik" 
-          className="h-8 w-auto"
-        />
-        <span className="text-sm font-semibold text-gray-400">
-          Prishtina Trafik
-        </span>
+      <div className="bg-gray-900 border-b border-gray-800 px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <img 
+            src="/logo.png" 
+            alt="Prishtina Trafik" 
+            className="h-6 w-auto"
+          />
+          <span className="text-xs font-semibold text-gray-400">
+            Prishtina Trafik
+          </span>
+        </div>
+        
+        {isHomePage && (
+          <div className="flex gap-2">
+            <button
+              onClick={onShowRoutes}
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-gray-800 rounded-lg text-xs text-gray-300 hover:bg-gray-700 transition-all"
+            >
+              <Bus className="w-3 h-3" />
+              Linjat
+            </button>
+            <button
+              onClick={onShowStops}
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs transition-all ${
+                showStops 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              <MapPin className="w-3 h-3" />
+              Stacionet
+            </button>
+          </div>
+        )}
       </div>
       
       <div className="bg-gray-900 border-t border-gray-800 px-4 py-2 pb-safe">

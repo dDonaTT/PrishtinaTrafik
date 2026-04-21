@@ -25,10 +25,22 @@ const taxiService = {
     });
     return response.data;
   },
+  orderTaxi: async (orderData) => {
+    const response = await API.post("/taxi/order", orderData);
+    return response.data;
+  },
+  getOrderStatus: async (orderId) => {
+    const response = await API.get(`/taxi/order/${orderId}`);
+    return response.data;
+  },
   getETA: async (startLat, startLng, endLat, endLng) => {
     const response = await API.get(
       `/rides/eta?start_lat=${startLat}&start_lng=${startLng}&end_lat=${endLat}&end_lng=${endLng}`,
     );
+    return response.data;
+  },
+  getAvailableTaxis: async () => {
+    const response = await API.get("/rides/all?vehicle_type=taxi");
     return response.data;
   },
 };

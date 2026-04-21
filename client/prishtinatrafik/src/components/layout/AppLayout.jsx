@@ -1,9 +1,8 @@
-// client/src/components/layout/AppLayout.jsx
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
-export default function AppLayout() {
+export default function AppLayout({ onShowRoutes, onShowStops, showStops }) {
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-gray-50 dark:bg-gray-950">
       <div className="hidden md:flex">
@@ -12,11 +11,15 @@ export default function AppLayout() {
       
       <div className="flex-1 flex flex-col min-h-0 relative">
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <Outlet />
+          <Outlet context={{ onShowRoutes, onShowStops, showStops }} />
         </div>
         
         <div className="md:hidden">
-          <MobileNav />
+          <MobileNav 
+            onShowRoutes={onShowRoutes} 
+            onShowStops={onShowStops} 
+            showStops={showStops}
+          />
         </div>
       </div>
     </div>

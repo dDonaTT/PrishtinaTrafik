@@ -5,6 +5,7 @@ import { useVehicles } from "../hooks/useVehicles";
 import { useTickets } from "../hooks/useTickets";
 import { useRides } from "../hooks/useRides";
 import { useBus } from "../hooks/useBus";
+import { useTaxi } from "../hooks/useTaxi";
 import MapView from "../components/map/MapView";
 import VehicleFilters from "../components/map/VehicleFilters";
 import BuyTicketModel from "../components/tickets/BuyTicketModel";
@@ -13,6 +14,7 @@ import BusRoutesPanel from "../components/bus/BusRoutesPanel";
 import BusStopsLayer from "../components/bus/BusStopsLayer";
 import StopRoutesModal from "../components/bus/StopRoutesModal";
 import RouteDetailsModal from "../components/bus/RouteDetailsModal";
+import OrderTaxiModal from "../components/taxi/OrderTaxiModal";
 import { Bike, Bus, Car, Scooter, Navigation } from "lucide-react";
 import taxiService from "../services/taxiService";
 import toast from "react-hot-toast";
@@ -22,7 +24,12 @@ const TICKET_PRICES = {
   taxi: 2.5,
 };
 
-export default function Home() {
+export default function Home({
+  showRoutesPanel,
+  setShowRoutesPanel,
+  showBusStops,
+  setShowBusStops,
+}) {
   const { user } = useAuth();
   const {
     location,
@@ -39,20 +46,20 @@ export default function Home() {
   const { buyTicket } = useTickets();
   const { startRide } = useRides();
   const { routes, allStops, loadNearbyStops } = useBus();
-
+  const { orderTaxi, calculateETA } = useTaxi();
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [purchasedTicket, setPurchasedTicket] = useState(null);
   const [showStartRideConfirm, setShowStartRideConfirm] = useState(false);
-  const [showRoutesPanel, setShowRoutesPanel] = useState(false);
-  const [showBusStops, setShowBusStops] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
   const [selectedStop, setSelectedStop] = useState(null);
   const [showStopRoutesModal, setShowStopRoutesModal] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [showRouteDetailsModal, setShowRouteDetailsModal] = useState(false);
+  const [showOrderTaxiModal, setShowOrderTaxiModal] = useState(false);
+  const [selectedTaxi, setSelectedTaxi] = useState(null);
 
   useEffect(() => {
     loadAllVehicles(selectedType);
@@ -72,6 +79,10 @@ export default function Home() {
       setShowBuyModal(true);
     } else if (action === "ride") {
       setShowStartRideConfirm(true);
+    }
+    if (action === "order") {
+      setSelectedTaxi(vehicle);
+      setShowOrderTaxiModal(true);
     }
   };
 
@@ -184,23 +195,26 @@ export default function Home() {
         <Navigation className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
       </button>
 
-      <button
-        onClick={() => setShowRoutesPanel(true)}
-        className="absolute bottom-36 left-4 z-20 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg"
-      >
-        <Bus className="w-5 h-5" />
-      </button>
-
-      <button
-        onClick={() => setShowBusStops(!showBusStops)}
-        className={`absolute bottom-36 left-20 z-20 p-3 rounded-full shadow-lg transition-all ${
-          showBusStops
-            ? "bg-green-600 text-white"
-            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-        }`}
-      >
-        🚏
-      </button>
+      <div className="absolute bottom-36 left-4 z-20 hidden md:flex md:flex-col md:gap-3">
+        <button
+          onClick={() => setShowRoutesPanel(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all"
+          title="Linjat e autobusit"
+        >
+          <Bus className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setShowBusStops(!showBusStops)}
+          className={`p-3 rounded-full shadow-lg transition-all ${
+            showBusStops
+              ? "bg-green-600 text-white"
+              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+          }`}
+          title="Stacionet e autobusit"
+        >
+          🚏
+        </button>
+      </div>
 
       <VehicleFilters
         selectedType={selectedType}
@@ -466,6 +480,23 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+      {showOrderTaxiModal && selectedTaxi && location && (
+        <OrderTaxiModal
+          taxi={selectedTaxi}
+          location={location}
+          isOpen={showOrderTaxiModal}
+          onClose={() => {
+            setShowOrderTaxiModal(false);
+            setSelectedTaxi(null);
+          }}
+          onOrderSuccess={(order) => {
+            console.log("Order placed:", order);
+            toast.success(
+              `Taxi ordered! ETA: ${order.taxi.eta_minutes} minutes`,
+            );
+          }}
+        />
       )}
 
       {showRoutesPanel && (

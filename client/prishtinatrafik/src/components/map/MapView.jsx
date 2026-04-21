@@ -17,6 +17,24 @@ const getVehicleColor = (type) => {
   return colors[type] || "#6B7280";
 };
 
+const getTaxiStatusIcon = (status) => {
+  switch(status) {
+    case 'available': return '🟢';
+    case 'busy': return '🔴';
+    case 'en_route': return '🟡';
+    default: return '⚪';
+  }
+};
+
+const getTaxiStatusText = (status) => {
+  switch(status) {
+    case 'available': return 'I lirë';
+    case 'busy': return 'I zënë';
+    case 'en_route': return 'Në rrugë';
+    default: return 'I panjohur';
+  }
+};
+
 const MapView = ({
   vehicles = {},
   selectedType,
@@ -136,9 +154,9 @@ const MapView = ({
         buttonText = '🎫 Bli biletë';
         buttonColor = '#2563eb';
       } else if (isTaxiVehicle) {
-        buttonAction = 'ride';
-        buttonText = '🚕 Fillo udhëtimin';
-        buttonColor = '#10b981';
+        buttonAction = 'order';
+        buttonText = '🚕 Porosit Taxi';
+        buttonColor = '#f59e0b';
       } else if (isRideVehicle) {
         buttonAction = 'ride';
         buttonText = '🚲 Fillo udhëtimin';
@@ -169,24 +187,51 @@ const MapView = ({
       }
       
       if (isTicketVehicle) {
-        const price = vehicle.vehicle_type === 'bus' ? '€0.40' : '€2.50';
         popupHTML += `
           <div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 8px;">
-            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Çmimi: ${price}</p>
+            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Çmimi: €0.40</p>
             <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">Biletë e vetme</p>
           </div>
         `;
       } else if (isTaxiVehicle) {
+        const taxiStatus = vehicle.taxi_status || 'available';
+        const eta = vehicle.eta_minutes || Math.floor(Math.random() * 10) + 3;
+        
         popupHTML += `
           <div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 8px;">
-            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Tarifa e nisjes: €1.50</p>
-            <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">€0.80/km + €0.20/min pritje</p>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <span style="font-size: 12px; color: #6b7280;">Statusi:</span>
+              <span style="font-size: 12px; font-weight: bold; color: ${taxiStatus === 'available' ? '#10b981' : '#ef4444'}">
+                ${getTaxiStatusIcon(taxiStatus)} ${getTaxiStatusText(taxiStatus)}
+              </span>
+            </div>
+            ${taxiStatus === 'available' ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span style="font-size: 12px; color: #6b7280;">ETA:</span>
+                <span style="font-size: 12px; font-weight: bold;">${eta} minuta</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-size: 12px; color: #6b7280;">Tarifa:</span>
+                <span style="font-size: 12px; font-weight: bold;">€1.50 + €0.80/km</span>
+              </div>
+            ` : `
+              <div style="text-align: center; margin-top: 5px;">
+                <span style="font-size: 11px; color: #ef4444;">Jo i disponueshëm për momentin</span>
+              </div>
+            `}
+          </div>
+        `;
+      } else if (isRideVehicle) {
+        popupHTML += `
+          <div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 8px;">
+            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1f2937;">Çmimi: €0.05/min</p>
+            <p style="margin: 2px 0 0 0; font-size: 10px; color: #6b7280;">Minimumi: €1.00</p>
           </div>
         `;
       }
       
       popupHTML += `
-        <button id="${buttonAction === 'buy' ? `buy-ticket-${vehicle.id || vehicle.vehicle_id}` : `start-ride-${vehicle.id || vehicle.vehicle_id}`}" style="
+        <button id="${buttonAction === 'buy' ? `buy-ticket-${vehicle.id || vehicle.vehicle_id}` : buttonAction === 'order' ? `order-taxi-${vehicle.id || vehicle.vehicle_id}` : `start-ride-${vehicle.id || vehicle.vehicle_id}`}" style="
           background: ${buttonColor}; color: white; border: none; 
           padding: 10px 16px; border-radius: 8px; cursor: pointer;
           width: 100%; font-weight: 600; margin-top: 8px;
@@ -204,7 +249,15 @@ const MapView = ({
         .addTo(map.current);
 
       popup.on("open", () => {
-        const btnId = buttonAction === 'buy' ? `buy-ticket-${vehicle.id || vehicle.vehicle_id}` : `start-ride-${vehicle.id || vehicle.vehicle_id}`;
+        let btnId;
+        if (buttonAction === 'buy') {
+          btnId = `buy-ticket-${vehicle.id || vehicle.vehicle_id}`;
+        } else if (buttonAction === 'order') {
+          btnId = `order-taxi-${vehicle.id || vehicle.vehicle_id}`;
+        } else {
+          btnId = `start-ride-${vehicle.id || vehicle.vehicle_id}`;
+        }
+        
         const btn = document.getElementById(btnId);
         if (btn) {
           btn.onclick = (e) => {

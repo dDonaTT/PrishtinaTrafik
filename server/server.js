@@ -14,6 +14,8 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const inspectorRoutes = require("./routes/inspectorRoutes");
 const busRoutes = require("./routes/busRoutes")
+const taxiRoutes = require("./routes/taxiRoutes")
+const driverRoutes = require("./routes/driverRoutes")
 
 dotenv.config();
 
@@ -36,6 +38,9 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/inspector", inspectorRoutes);
 app.use("/api/bus", busRoutes);
+app.use("/api/taxi", taxiRoutes);
+app.use("/api/driver", driverRoutes);
+
 
 
 const port = process.env.PORT || 5000;
