@@ -1,39 +1,39 @@
 const mysql = require("mysql2");
-const config = require("./env");
 
 let pool;
 
-if (config.MYSQL_URL) {
-  pool = mysql.createPool({
-    uri: config.MYSQL_URL,
-    waitForConnections: true,
-    connectionLimit: 10,
-    ssl: { rejectUnauthorized: false }
-  }).promise();
-} else {
+if (process.env.MYSQL_PUBLIC_URL) {
+  console.log("Connecting to Railway MySQL via public URL");
   pool = mysql
     .createPool({
-      host: config.DB_HOST,
-      user: config.DB_USER,
-      password: config.DB_PASSWORD,
-      database: config.DB_DATABASE,
-      port: config.DB_PORT,
+      uri: process.env.MYSQL_PUBLIC_URL,
+      waitForConnections: true,
+      connectionLimit: 10,
+      ssl: { rejectUnauthorized: false }
+    })
+    .promise();
+} else {
+  console.log("Connecting to local MySQL");
+  pool = mysql
+    .createPool({
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_DATABASE || 'prishtina_trafik',
+      port: process.env.DB_PORT || 3306,
       waitForConnections: true,
       connectionLimit: 10,
     })
     .promise();
 }
 
-const testConnection = async () => {
-  try {
-    const connection = await pool.getConnection();
+pool.getConnection()
+  .then(conn => {
     console.log("✅ Database connected successfully");
-    connection.release();
-  } catch (err) {
+    conn.release();
+  })
+  .catch(err => {
     console.error("❌ Database connection error:", err.message);
-  }
-};
-
-testConnection();
+  });
 
 module.exports = pool;
