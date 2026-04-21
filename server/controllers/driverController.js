@@ -307,7 +307,6 @@ const driverController = {
   rejectOrder: async (req, res) => {
     try {
       const { order_id } = req.body;
-      // Thjesht mos e prano, ose shëno si rejected
       res.json({ success: true, message: "Order rejected" });
     } catch (error) {
       res.status(500).json({ message: error.message });
