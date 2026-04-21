@@ -33,4 +33,4 @@ const driverMiddleware = (req, res, next) => {
   next();
 };
 
-module.exports = {authMiddleware,adminMiddleware,inspectorMiddleware};
+module.exports = {authMiddleware,adminMiddleware,inspectorMiddleware,driverMiddleware};
