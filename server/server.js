@@ -23,12 +23,16 @@ dotenv.config();
 
 const app = express();
 
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://prishtina-trafik.vercel.app"],
-    credentials: true,
-  }),
-);
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://prishtinatrafik.vercel.app',
+    'https://prishtinatrafik-9t7e8xsa7-ddonatts-projects.vercel.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use("/api/webhook", webhookRoutes);
 
