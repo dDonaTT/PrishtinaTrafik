@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// client/src/hooks/useLocation.js
+import { useState, useEffect, useCallback } from 'react';
 
 const DEFAULT_LOCATION = { lat: 42.6629, lng: 21.1655 };
 
@@ -7,7 +8,7 @@ export const useLocation = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     setLoading(true);
     
     if (!navigator.geolocation) {
@@ -32,11 +33,11 @@ export const useLocation = () => {
         setLoading(false);
       }
     );
-  };
+  }, []);
 
-  if (loading && location === DEFAULT_LOCATION) {
+  useEffect(() => {
     getCurrentLocation();
-  }
+  }, [getCurrentLocation]);
 
   return { location, loading, error, getCurrentLocation };
 };
