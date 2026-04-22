@@ -46,32 +46,37 @@ const MapView = ({
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markers = useRef([]);
+  const userMarker = useRef(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
     const token = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (!token || !mapContainer.current) return;
+    if (!token || !mapContainer.current || map.current) return;
 
     mapboxgl.accessToken = token;
 
-    if (!map.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: [center.lng, center.lat],
-        zoom: zoom,
-      });
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [center.lng, center.lat],
+      zoom: zoom,
+    });
 
-      map.current.on("load", () => {
-        setIsMapLoaded(true);
-        map.current.resize();
-        if (onMapLoad) {
-          onMapLoad(map.current);
-        }
-      });
+    map.current.on("load", () => {
+      setIsMapLoaded(true);
+      map.current.resize();
+      if (onMapLoad) {
+        onMapLoad(map.current);
+      }
+    });
 
-      map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-    }
+    const geolocateControl = new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showUserHeading: true
+    });
+    map.current.addControl(geolocateControl, 'top-right');
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     return () => {
       if (map.current) {
@@ -79,13 +84,67 @@ const MapView = ({
         map.current = null;
       }
     };
-  }, []);
+  }, []); 
 
   useEffect(() => {
-    if (map.current && onMapLoad && isMapLoaded) {
+    if (map.current && isMapLoaded && onMapLoad) {
       onMapLoad(map.current);
     }
   }, [isMapLoaded, onMapLoad]);
+
+  useEffect(() => {
+    if (!map.current || !isMapLoaded || !center) return;
+
+    if (userMarker.current) {
+      userMarker.current.remove();
+    }
+
+    const el = document.createElement("div");
+    el.className = "user-location-marker";
+    el.innerHTML = `
+      <div style="
+        background: #3B82F6;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #3B82F6;
+        animation: pulse 2s infinite;
+      "></div>
+    `;
+
+    userMarker.current = new mapboxgl.Marker(el)
+      .setLngLat([center.lng, center.lat])
+      .addTo(map.current);
+
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.5); opacity: 0.5; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+    `;
+    if (!document.querySelector('#mapbox-pulse-style')) {
+      style.id = 'mapbox-pulse-style';
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      if (userMarker.current) {
+        userMarker.current.remove();
+      }
+    };
+  }, [isMapLoaded, center]); 
+
+  useEffect(() => {
+    if (map.current && center) {
+      map.current.flyTo({
+        center: [center.lng, center.lat],
+        essential: true,
+        duration: 1500,
+      });
+    }
+  }, [center]);
 
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
@@ -271,16 +330,6 @@ const MapView = ({
       markers.current.push(marker);
     });
   }, [vehicles, isMapLoaded, selectedType, onVehicleClick]);
-
-  useEffect(() => {
-    if (map.current && center) {
-      map.current.flyTo({
-        center: [center.lng, center.lat],
-        essential: true,
-        duration: 1500,
-      });
-    }
-  }, [center]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-gray-100">

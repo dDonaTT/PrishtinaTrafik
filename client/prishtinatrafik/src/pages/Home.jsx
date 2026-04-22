@@ -173,7 +173,7 @@ export default function Home({
   }
 
   return (
-    <div className="relative h-screen w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden pb-28 md:pb-0">
       {location && (
         <MapView
           vehicles={vehicles}

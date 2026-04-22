@@ -1,5 +1,4 @@
-// client/src/hooks/useRides.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import rideService from '../services/rideService';
 import toast from 'react-hot-toast';
 
@@ -8,51 +7,110 @@ export const useRides = () => {
   const [rideHistory, setRideHistory] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timer, setTimer] = useState(null);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const pricePerMinuteRef = useRef(0);
 
-  // Ngarko udhëtimin aktiv
+  const startTimer = useCallback((startTime, pricePerMinute) => {
+    // Stop timer-in ekzistues
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    startTimeRef.current = new Date(startTime);
+    pricePerMinuteRef.current = pricePerMinute || 0.05;
+    
+    const updateDuration = () => {
+      if (!startTimeRef.current) return;
+      
+      const now = new Date();
+      const diffMs = now - startTimeRef.current;
+      const minutes = Math.floor(diffMs / 60000);
+      const seconds = Math.floor((diffMs % 60000) / 1000);
+      const cost = (minutes * pricePerMinuteRef.current).toFixed(2);
+      
+      setActiveRide(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          current_duration: { minutes, seconds },
+          current_cost: cost
+        };
+      });
+    };
+    
+    updateDuration();
+    
+    timerRef.current = setInterval(updateDuration, 1000);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    startTimeRef.current = null;
+  }, []);
+
   const loadActiveRide = useCallback(async () => {
     try {
       const response = await rideService.getActiveRide();
-      console.log('Active ride response:', response); // Debug
-      if (response.data) {
-        setActiveRide(response.data);
-        startTimer(response.data.start_time);
+      console.log('Active ride response:', response);
+      
+      // response është response.data nga API
+      if (response && response.data) {
+        const ride = response.data;
+        setActiveRide(ride);
+        if (ride.start_time) {
+          const price = ride.price_per_minute || 
+                       (ride.vehicle_type === 'bike' ? 0.05 : 0.03);
+          startTimer(ride.start_time, price);
+        }
+      } else if (response && response.ride_id) {
+        setActiveRide(response);
+        if (response.start_time) {
+          const price = response.price_per_minute || 
+                       (response.vehicle_type === 'bike' ? 0.05 : 0.03);
+          startTimer(response.start_time, price);
+        }
       } else {
         setActiveRide(null);
         stopTimer();
       }
     } catch (error) {
       console.error('Load active ride error:', error);
+      setActiveRide(null);
+      stopTimer();
     }
-  }, []);
+  }, [startTimer, stopTimer]);
 
-  // Ngarko historikun
   const loadRideHistory = useCallback(async () => {
     try {
       const response = await rideService.getRideHistory();
-      console.log('Ride history response:', response); // Debug
-      // Kontrollo formatin e përgjigjes
+      console.log('Ride history response:', response);
+      
+      let history = [];
       if (response && response.data) {
-        setRideHistory(Array.isArray(response.data) ? response.data : []);
+        history = Array.isArray(response.data) ? response.data : [];
       } else if (Array.isArray(response)) {
-        setRideHistory(response);
-      } else {
-        setRideHistory([]);
+        history = response;
       }
+      setRideHistory(history);
     } catch (error) {
       console.error('Load ride history error:', error);
       setRideHistory([]);
     }
   }, []);
 
-  // Ngarko statistikat
   const loadStats = useCallback(async () => {
     try {
       const response = await rideService.getRideStats();
-      console.log('Ride stats response:', response); // Debug
+      console.log('Ride stats response:', response);
+      
       if (response && response.data) {
         setStats(response.data);
+      } else if (response) {
+        setStats(response);
       } else {
         setStats(null);
       }
@@ -62,33 +120,6 @@ export const useRides = () => {
     }
   }, []);
 
-  // Timer për udhëtimin aktiv
-  const startTimer = (startTime) => {
-    stopTimer();
-    const interval = setInterval(() => {
-      if (activeRide) {
-        const start = new Date(startTime);
-        const now = new Date();
-        const minutes = Math.floor((now - start) / 60000);
-        const seconds = Math.floor(((now - start) % 60000) / 1000);
-        setActiveRide(prev => ({
-          ...prev,
-          current_duration: { minutes, seconds },
-          current_cost: (minutes * (prev.price_per_minute || 0)).toFixed(2)
-        }));
-      }
-    }, 1000);
-    setTimer(interval);
-  };
-
-  const stopTimer = () => {
-    if (timer) {
-      clearInterval(timer);
-      setTimer(null);
-    }
-  };
-
-  // Fillo udhëtimin (bike/scooter)
   const startRide = async (vehicleId, vehicleType, startLocation) => {
     try {
       setLoading(true);
@@ -97,11 +128,22 @@ export const useRides = () => {
         vehicle_type: vehicleType,
         start_location: startLocation
       });
+      
       console.log('Start ride response:', response);
+      
+      if (response && response.data) {
+        const ride = response.data;
+        setActiveRide(ride);
+        if (ride.start_time) {
+          const price = ride.price_per_minute || 
+                       (ride.vehicle_type === 'bike' ? 0.05 : 0.03);
+          startTimer(ride.start_time, price);
+        }
+      }
+      
       toast.success('Udhëtimi filloi!');
-      await loadActiveRide();
       await loadRideHistory();
-      return response.data;
+      return response?.data;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Gabim gjatë fillimit');
       throw error;
@@ -110,7 +152,6 @@ export const useRides = () => {
     }
   };
 
-  // Përfundo udhëtimin (bike/scooter)
   const endRide = async (rideId, endLocation) => {
     try {
       setLoading(true);
@@ -118,13 +159,19 @@ export const useRides = () => {
         ride_id: rideId,
         end_location: endLocation
       });
+      
       console.log('End ride response:', response);
-      toast.success(`Udhëtimi përfundoi! Kosto: €${response.data?.total_cost || 0}`);
+      
+      const totalCost = response?.data?.total_cost || 
+                        response?.total_cost || 
+                        '0';
+      
+      toast.success(`Udhëtimi përfundoi! Kosto: €${totalCost}`);
       stopTimer();
       setActiveRide(null);
       await loadRideHistory();
       await loadStats();
-      return response.data;
+      return response?.data;
     } catch (error) {
       toast.error(error.response?.data?.message || 'Gabim gjatë përfundimit');
       throw error;
@@ -133,7 +180,6 @@ export const useRides = () => {
     }
   };
 
-  // Anulo udhëtimin
   const cancelRide = async () => {
     try {
       await rideService.cancelRide();
@@ -147,7 +193,6 @@ export const useRides = () => {
     }
   };
 
-  // Ngarko të dhënat në fillim
   useEffect(() => {
     const loadAll = async () => {
       setLoading(true);
@@ -155,12 +200,9 @@ export const useRides = () => {
       setLoading(false);
     };
     loadAll();
-  }, [loadActiveRide, loadRideHistory, loadStats]);
-
-  // Pastro timer në unmount
-  useEffect(() => {
+    
     return () => stopTimer();
-  }, []);
+  }, [loadActiveRide, loadRideHistory, loadStats, stopTimer]);
 
   return {
     activeRide,
