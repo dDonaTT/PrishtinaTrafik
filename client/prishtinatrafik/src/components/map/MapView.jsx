@@ -84,7 +84,7 @@ const MapView = ({
         map.current = null;
       }
     };
-  }, []); 
+  }, []);
 
   useEffect(() => {
     if (map.current && isMapLoaded && onMapLoad) {
@@ -93,18 +93,28 @@ const MapView = ({
   }, [isMapLoaded, onMapLoad]);
 
   useEffect(() => {
-    if (!map.current || !isMapLoaded || !center) return;
+    console.log('🔵 [MARKER] Checking conditions...');
+    console.log('🔵 map.current:', !!map.current);
+    console.log('🔵 isMapLoaded:', isMapLoaded);
+    console.log('🔵 center:', center);
+    
+    if (!map.current || !isMapLoaded || !center) {
+      console.log('❌ [MARKER] Conditions not met');
+      return;
+    }
+
+    console.log('✅ [MARKER] Adding user marker at:', center.lng, center.lat);
 
     if (userMarker.current) {
       userMarker.current.remove();
     }
 
-    const el = document.createElement("div");
-    el.className = "user-location-marker";
-    el.innerHTML = `
+    const markerDiv = document.createElement('div');
+    markerDiv.innerHTML = `
       <div style="
         background: #3B82F6;
-        width: 16px; height: 16px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
         border: 3px solid white;
         box-shadow: 0 0 0 2px #3B82F6;
@@ -112,29 +122,31 @@ const MapView = ({
       "></div>
     `;
 
-    userMarker.current = new mapboxgl.Marker(el)
-      .setLngLat([center.lng, center.lat])
-      .addTo(map.current);
-
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes pulse {
-        0% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.5); opacity: 0.5; }
-        100% { transform: scale(1); opacity: 1; }
-      }
-    `;
-    if (!document.querySelector('#mapbox-pulse-style')) {
-      style.id = 'mapbox-pulse-style';
+    if (!document.querySelector('#user-marker-style')) {
+      const style = document.createElement('style');
+      style.id = 'user-marker-style';
+      style.textContent = `
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.5); opacity: 0.5; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `;
       document.head.appendChild(style);
     }
+
+    userMarker.current = new mapboxgl.Marker(markerDiv)
+      .setLngLat([center.lng, center.lat])
+      .addTo(map.current);
+      
+    console.log('✅ [MARKER] Marker added successfully');
 
     return () => {
       if (userMarker.current) {
         userMarker.current.remove();
       }
     };
-  }, [isMapLoaded, center]); 
+  }, [isMapLoaded, center]);
 
   useEffect(() => {
     if (map.current && center) {

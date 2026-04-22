@@ -545,6 +545,7 @@ export default function Home({
           }}
         />
       )}
+      <div className="h-24 md:hidden"></div>
     </div>
   );
 }

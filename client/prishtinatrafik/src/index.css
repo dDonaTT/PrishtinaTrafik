@@ -13,6 +13,9 @@ body {
     scrollbar-width: none;
   }
 }
+.user-location-marker {
+  cursor: pointer;
+}
 #qr-reader {
   width: 100%;
   max-width: 500px;

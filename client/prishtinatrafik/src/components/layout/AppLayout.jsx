@@ -10,7 +10,7 @@ export default function AppLayout({ onShowRoutes, onShowStops, showStops }) {
       </div>
       
       <div className="flex-1 flex flex-col min-h-0 relative">
-        <div className="flex-1 min-h-0 overflow-y-auto pb-24 md:pb-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <Outlet context={{ onShowRoutes, onShowStops, showStops }} />
         </div>
       </div>
