@@ -1,6 +1,7 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "Prishtina Trafik",
+  "short_name": "Prishtina Trafik",
+  "description": "Transporti urban inteligjent në Prishtinë",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
