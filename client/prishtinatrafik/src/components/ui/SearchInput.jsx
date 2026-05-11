@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Loader, X,Navigation } from 'lucide-react';
+import { Search, MapPin, Loader, X, Navigation } from 'lucide-react';
 import geocodingService from '../../services/geocodingService';
 
 export default function SearchInput({ 
@@ -48,6 +48,8 @@ export default function SearchInput({
   const handleSelect = (suggestion) => {
     setQuery(suggestion.place_name);
     setShowSuggestions(false);
+    setSuggestions([]); 
+    setSelectedIndex(-1); 
     onSelect(suggestion);
   };
 
@@ -61,7 +63,6 @@ export default function SearchInput({
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
       handleSelect(suggestions[selectedIndex]);
-      setSelectedIndex(-1);
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
       setSelectedIndex(-1);
@@ -72,6 +73,7 @@ export default function SearchInput({
     setQuery('');
     setSuggestions([]);
     setShowSuggestions(false);
+    setSelectedIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -127,6 +129,12 @@ export default function SearchInput({
       {loading && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <Loader className="w-4 h-4 animate-spin text-gray-400" />
+        </div>
+      )}
+      
+      {showSuggestions && !loading && suggestions.length === 0 && query.length >= 3 && (
+        <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 text-center">
+          <p className="text-sm text-gray-500">Nuk u gjetën lokacione në Prishtinë</p>
         </div>
       )}
     </div>

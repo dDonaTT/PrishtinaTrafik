@@ -7,7 +7,9 @@ const geocodingService = {
     if (!query || query.length < 3) return [];
     
     try {
-      let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5&language=sq`;
+      let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5&language=sq&country=xk&types=address,poi,locality,place`;
+      
+    
       
       if (proximity) {
         url += `&proximity=${proximity.lng},${proximity.lat}`;
@@ -32,7 +34,7 @@ const geocodingService = {
 
   reverseGeocode: async (lat, lng) => {
     try {
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=sq`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=sq&country=xk`;
       const response = await axios.get(url);
       
       if (response.data.features && response.data.features.length > 0) {
